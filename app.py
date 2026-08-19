@@ -11,8 +11,8 @@ from google.oauth2.service_account import Credentials
 # ============================================================
 
 st.set_page_config(
-    page_title="MCID Mosquito Quiz",
-    page_icon="🦟",
+    page_title="MCID Quiz",
+    page_icon="🦠",
     layout="centered"
 )
 
@@ -24,7 +24,7 @@ st.set_page_config(
 QUIZ_LENGTH = 15
 TIME_LIMIT = 15
 
-GOOGLE_SHEET_NAME = "Mosquito Week Leaderboard"
+GOOGLE_SHEET_NAME = "Quiz Leaderboard"
 QUESTIONS_FILE = "questions.csv"
 LOGO_FILE = "MCID visual.jpg"
 
@@ -344,6 +344,8 @@ defaults = {
 
     "timeout_recorded_for": None,
 
+    # This is used to control the start-page
+    # leaderboard placeholder.
     "leaderboard_placeholder_active": False
 }
 
@@ -381,7 +383,7 @@ def show_header():
 
     with col2:
 
-        st.title("MCID MOSQUITO QUIZ 🦟")
+        st.title("MCID QUIZ")
 
 
 # ============================================================
@@ -513,7 +515,9 @@ def finish_quiz():
 
 
 # ============================================================
+# ============================================================
 # START PAGE
+# ============================================================
 # ============================================================
 
 if st.session_state.page == "start":
@@ -525,9 +529,8 @@ if st.session_state.page == "start":
     # ========================================================
 
     st.subheader(
-        "It's World Mosquito Week, so to test your knowledge "
-        "we have put together a quick quiz on mosquitoes and "
-        "mosquito-borne infectious diseases. Enjoy!"
+        "Test your knowledge of Infectious Diseases, "
+        "and win a cuddly toy!"
     )
 
     # ========================================================
@@ -538,7 +541,7 @@ if st.session_state.page == "start":
         """
 ### 📝 How to play
 
-- You will answer **15 questions** about mosquitoes and infectious diseases.
+- You will answer **15 questions** about infectious diseases.
 - Each question has **three possible answers**.
 - You have **15 seconds to answer each question**.
 - Questions are selected randomly.
@@ -570,17 +573,6 @@ if st.session_state.page == "start":
         placeholder="Enter your email address"
     )
 
-    # ========================================================
-    # MCID WEBSITE LINK
-    # ========================================================
-
-    st.markdown(
-        """
-To find out more about the MCID and the research we fund, 
-please check out the [MCID webpage](https://www.mcid.unibe.ch/).
-        """
-    )
-
     newsletter = st.selectbox(
         "Would you like to receive the SPREAD newsletter?",
         [
@@ -602,6 +594,14 @@ please check out the [MCID webpage](https://www.mcid.unibe.ch/).
         use_container_width=True
     )
 
+    # ========================================================
+    # LEADERBOARD PLACEHOLDER
+    #
+    # The leaderboard is created inside an empty container.
+    # When the quiz starts, this container is explicitly
+    # cleared before changing to the quiz page.
+    # ========================================================
+
     leaderboard_placeholder = st.empty()
 
     # ========================================================
@@ -609,6 +609,12 @@ please check out the [MCID webpage](https://www.mcid.unibe.ch/).
     # ========================================================
 
     if start_clicked:
+
+        # ----------------------------------------------------
+        # REMOVE START-PAGE LEADERBOARD
+        #
+        # THIS HAPPENS BEFORE THE PAGE CHANGES TO "QUIZ".
+        # ----------------------------------------------------
 
         leaderboard_placeholder.empty()
 
@@ -771,10 +777,22 @@ please check out the [MCID webpage](https://www.mcid.unibe.ch/).
 
         st.session_state.page = "quiz"
 
+        # ----------------------------------------------------
+        # RE-RUN
+        # ----------------------------------------------------
+
         st.rerun()
 
     # ========================================================
     # TOP 3 LEADERBOARD
+    #
+    # IMPORTANT:
+    #
+    # This is ONLY rendered when START QUIZ has NOT been
+    # clicked.
+    #
+    # If START QUIZ is clicked, the placeholder above is
+    # cleared and st.rerun() happens before this code runs.
     # ========================================================
 
     else:
@@ -790,17 +808,29 @@ please check out the [MCID webpage](https://www.mcid.unibe.ch/).
             )
 
             display_leaderboard(
-                top_n=3
-            )
+    top_n=3
+)
 
 
 # ============================================================
+# ============================================================
 # QUIZ PAGE
+# ============================================================
+# ============================================================
+#
+# THERE IS NO LEADERBOARD CODE IN THIS SECTION.
 # ============================================================
 
 elif st.session_state.page == "quiz":
 
     show_header()
+
+    # ========================================================
+    # IMPORTANT:
+    #
+    # The quiz page does NOT create a leaderboard.
+    # It does NOT call display_leaderboard().
+    # ========================================================
 
     questions = (
         st.session_state.quiz_questions
@@ -1089,7 +1119,9 @@ elif st.session_state.page == "quiz":
 
 
 # ============================================================
+# ============================================================
 # RESULTS PAGE
+# ============================================================
 # ============================================================
 
 elif st.session_state.page == "results":
@@ -1225,5 +1257,5 @@ elif st.session_state.page == "results":
     st.write("")
 
     st.info(
-        "Thanks for taking part in the MCID Mosquito Quiz!"
+        "Thanks for taking part in the MCID Quiz!"
     )
