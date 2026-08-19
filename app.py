@@ -381,7 +381,7 @@ def show_header():
 
     with col2:
 
-        st.title("MCID MOSQUITO QUIZ 🦟")
+        st.title("🦟 MCID MOSQUITO QUIZ 🦟")
 
 
 # ============================================================
