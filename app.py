@@ -33,6 +33,7 @@ LOGO_FILE = "MCID visual.jpg"
 # GOOGLE SHEETS CONNECTION
 # ============================================================
 
+@st.cache_resource
 def connect_to_google_sheet():
 
     scopes = [
@@ -515,40 +516,24 @@ def finish_quiz():
 
 if st.session_state.page == "start":
 
+    show_header()
+
     # ========================================================
-    # ENTIRE START PAGE IS INSIDE ONE CONTAINER
-    #
-    # This is important.
-    #
-    # When START QUIZ is pressed successfully, this entire
-    # container is emptied before st.rerun().
-    #
-    # Therefore the leaderboard, login fields, instructions,
-    # button and all other start-page content disappear.
+    # INTRODUCTION
     # ========================================================
 
-    start_page = st.empty()
+    st.subheader(
+        "As its World Mosquito Week, we would like to test "
+        "your knowledge on mosquitoes and mosquito-borne "
+        "Infectious Disease"
+    )
 
-    with start_page.container():
+    # ========================================================
+    # INSTRUCTIONS
+    # ========================================================
 
-        show_header()
-
-        # ====================================================
-        # INTRODUCTION
-        # ====================================================
-
-        st.subheader(
-            "As its World Mosquito Week, we would like to "
-            "test your knowledge on mosquitoes and "
-            "mosquito-borne Infectious Disease"
-        )
-
-        # ====================================================
-        # INSTRUCTIONS
-        # ====================================================
-
-        st.markdown(
-            """
+    st.markdown(
+        """
 ### 📝 How to play
 
 - You will answer **15 questions** about mosquitoes and mosquito-borne infectious diseases.
@@ -560,265 +545,262 @@ if st.session_state.page == "start":
 - Your final score is the number of correct answers.
 - If players have the same score, the **fastest total time wins**.
 - Each email address can be used to play **once only**.
-            """
-        )
+        """
+    )
 
-        st.divider()
+    st.divider()
 
-        # ====================================================
-        # PLAYER DETAILS
-        # ====================================================
+    # ========================================================
+    # PLAYER DETAILS
+    # ========================================================
 
-        nickname = st.text_input(
-            "Nickname",
-            value=st.session_state.nickname,
-            placeholder="Enter your nickname"
-        )
+    nickname = st.text_input(
+        "Nickname",
+        value=st.session_state.nickname,
+        placeholder="Enter your nickname"
+    )
 
-        email = st.text_input(
-            "Email address",
-            value=st.session_state.email,
-            placeholder="Enter your email address"
-        )
+    email = st.text_input(
+        "Email address",
+        value=st.session_state.email,
+        placeholder="Enter your email address"
+    )
 
-        newsletter = st.selectbox(
-            "Would you like to receive the SPREAD newsletter?",
-            [
-                "Please select",
-                "Yes",
-                "No"
-            ]
-        )
+    newsletter = st.selectbox(
+        "Would you like to receive the SPREAD newsletter?",
+        [
+            "Please select",
+            "Yes",
+            "No"
+        ]
+    )
 
-        st.write("")
+    st.write("")
 
-        # ====================================================
-        # START BUTTON
-        # ====================================================
+    # ========================================================
+    # START BUTTON
+    # ========================================================
 
-        start_clicked = st.button(
-            "START QUIZ",
-            type="primary",
-            use_container_width=True
-        )
+    start_clicked = st.button(
+        "START QUIZ",
+        type="primary",
+        use_container_width=True
+    )
 
-        # ====================================================
-        # GAP BETWEEN START BUTTON AND LEADERBOARD
-        # ====================================================
+    # ========================================================
+    # START QUIZ LOGIC
+    #
+    # IMPORTANT:
+    # If the button is clicked successfully, we change the
+    # page state and immediately rerun.
+    #
+    # On the next run, this entire START PAGE section is
+    # skipped and only the QUIZ PAGE is rendered.
+    # ========================================================
 
-        st.write("")
-        st.write("")
-        st.write("")
+    if start_clicked:
 
-        # ====================================================
-        # CURRENT TOP 3
-        # ====================================================
+        # ----------------------------------------------------
+        # VALIDATE NICKNAME
+        # ----------------------------------------------------
 
-        st.divider()
+        if not nickname.strip():
 
-        st.subheader(
-            "🏆 Current Top 3"
-        )
-
-        display_leaderboard(
-            top_n=3
-        )
-
-        # ====================================================
-        # START QUIZ
-        # ====================================================
-
-        if start_clicked:
-
-            # ------------------------------------------------
-            # VALIDATE NICKNAME
-            # ------------------------------------------------
-
-            if not nickname.strip():
-
-                st.error(
-                    "Please enter a nickname."
-                )
-
-                st.stop()
-
-            # ------------------------------------------------
-            # VALIDATE EMAIL
-            # ------------------------------------------------
-
-            if not email.strip():
-
-                st.error(
-                    "Please enter your email address."
-                )
-
-                st.stop()
-
-            if "@" not in email or "." not in email:
-
-                st.error(
-                    "Please enter a valid email address."
-                )
-
-                st.stop()
-
-            # ------------------------------------------------
-            # VALIDATE NEWSLETTER
-            # ------------------------------------------------
-
-            if newsletter == "Please select":
-
-                st.error(
-                    "Please select whether you would like "
-                    "to receive the SPREAD newsletter."
-                )
-
-                st.stop()
-
-            # ------------------------------------------------
-            # CHECK EMAIL
-            # ------------------------------------------------
-
-            try:
-
-                if email_already_used(email):
-
-                    st.error(
-                        "This email address has already been used "
-                        "to play the quiz. Each player can only play once."
-                    )
-
-                    st.stop()
-
-            except Exception as e:
-
-                st.error(
-                    f"Unable to check the Google Sheet: {e}"
-                )
-
-                st.stop()
-
-            # ------------------------------------------------
-            # LOAD QUESTIONS
-            # ------------------------------------------------
-
-            try:
-
-                questions = load_questions()
-
-            except Exception as e:
-
-                st.error(
-                    f"Unable to load the questions: {e}"
-                )
-
-                st.stop()
-
-            questions = questions.dropna(
-                how="all"
+            st.error(
+                "Please enter a nickname."
             )
 
-            if len(questions) < QUIZ_LENGTH:
+            st.stop()
+
+        # ----------------------------------------------------
+        # VALIDATE EMAIL
+        # ----------------------------------------------------
+
+        if not email.strip():
+
+            st.error(
+                "Please enter your email address."
+            )
+
+            st.stop()
+
+        if "@" not in email or "." not in email:
+
+            st.error(
+                "Please enter a valid email address."
+            )
+
+            st.stop()
+
+        # ----------------------------------------------------
+        # VALIDATE NEWSLETTER
+        # ----------------------------------------------------
+
+        if newsletter == "Please select":
+
+            st.error(
+                "Please select whether you would like "
+                "to receive the SPREAD newsletter."
+            )
+
+            st.stop()
+
+        # ----------------------------------------------------
+        # CHECK EMAIL
+        # ----------------------------------------------------
+
+        try:
+
+            if email_already_used(email):
 
                 st.error(
-                    f"The question bank contains only "
-                    f"{len(questions)} questions. "
-                    f"You need at least {QUIZ_LENGTH} questions."
+                    "This email address has already been used "
+                    "to play the quiz. Each player can only play once."
                 )
 
                 st.stop()
 
-            # ------------------------------------------------
-            # SELECT QUESTIONS
-            # ------------------------------------------------
+        except Exception as e:
 
-            selected_questions = questions.sample(
-                n=QUIZ_LENGTH,
-                replace=False
-            ).reset_index(drop=True)
-
-            st.session_state.quiz_questions = (
-                selected_questions
+            st.error(
+                f"Unable to check the Google Sheet: {e}"
             )
 
-            # ------------------------------------------------
-            # PLAYER INFORMATION
-            # ------------------------------------------------
+            st.stop()
 
-            st.session_state.nickname = (
-                nickname.strip()
+        # ----------------------------------------------------
+        # LOAD QUESTIONS
+        # ----------------------------------------------------
+
+        try:
+
+            questions = load_questions()
+
+        except Exception as e:
+
+            st.error(
+                f"Unable to load the questions: {e}"
             )
 
-            st.session_state.email = (
-                email.strip()
+            st.stop()
+
+        questions = questions.dropna(
+            how="all"
+        )
+
+        if len(questions) < QUIZ_LENGTH:
+
+            st.error(
+                f"The question bank contains only "
+                f"{len(questions)} questions. "
+                f"You need at least {QUIZ_LENGTH} questions."
             )
 
-            st.session_state.newsletter = (
-                newsletter
-            )
+            st.stop()
 
-            # ------------------------------------------------
-            # RESET QUIZ
-            # ------------------------------------------------
+        # ----------------------------------------------------
+        # SELECT QUESTIONS
+        # ----------------------------------------------------
 
-            st.session_state.current_question = 0
+        selected_questions = questions.sample(
+            n=QUIZ_LENGTH,
+            replace=False
+        ).reset_index(drop=True)
 
-            st.session_state.answers = []
+        st.session_state.quiz_questions = (
+            selected_questions
+        )
 
-            st.session_state.score = 0
+        # ----------------------------------------------------
+        # PLAYER INFORMATION
+        # ----------------------------------------------------
 
-            st.session_state.final_time = 0
+        st.session_state.nickname = (
+            nickname.strip()
+        )
 
-            st.session_state.result_saved = False
+        st.session_state.email = (
+            email.strip()
+        )
 
-            st.session_state.current_answers = None
+        st.session_state.newsletter = (
+            newsletter
+        )
 
-            st.session_state.answers_for_question = None
+        # ----------------------------------------------------
+        # RESET QUIZ
+        # ----------------------------------------------------
 
-            st.session_state.show_timeout = False
+        st.session_state.current_question = 0
 
-            st.session_state.timeout_started = None
+        st.session_state.answers = []
 
-            st.session_state.timeout_recorded_for = None
+        st.session_state.score = 0
 
-            # ------------------------------------------------
-            # START TIMERS
-            # ------------------------------------------------
+        st.session_state.final_time = 0
 
-            now = time.time()
+        st.session_state.result_saved = False
 
-            st.session_state.quiz_start_time = now
+        st.session_state.current_answers = None
 
-            st.session_state.question_start_time = now
+        st.session_state.answers_for_question = None
 
-            # ------------------------------------------------
-            # CHANGE PAGE
-            # ------------------------------------------------
+        st.session_state.show_timeout = False
 
-            st.session_state.page = "quiz"
+        st.session_state.timeout_started = None
 
-            # ------------------------------------------------
-            # CRITICAL:
-            #
-            # REMOVE THE ENTIRE START PAGE BEFORE RERUN.
-            #
-            # This clears:
-            # - Header
-            # - Introduction
-            # - Instructions
-            # - Nickname
-            # - Email
-            # - Newsletter
-            # - Start button
-            # - Top 3 leaderboard
-            #
-            # The next run will therefore contain ONLY
-            # the quiz page.
-            # ------------------------------------------------
+        st.session_state.timeout_recorded_for = None
 
-            start_page.empty()
+        # ----------------------------------------------------
+        # START TIMERS
+        # ----------------------------------------------------
 
-            st.rerun()
+        now = time.time()
+
+        st.session_state.quiz_start_time = now
+
+        st.session_state.question_start_time = now
+
+        # ----------------------------------------------------
+        # CHANGE PAGE
+        # ----------------------------------------------------
+
+        st.session_state.page = "quiz"
+
+        # ----------------------------------------------------
+        # IMPORTANT:
+        #
+        # This rerun means the START PAGE is completely
+        # discarded. The next run starts at the QUIZ PAGE.
+        # ----------------------------------------------------
+
+        st.rerun()
+
+    # ========================================================
+    # GAP BEFORE LEADERBOARD
+    # ========================================================
+
+    st.write("")
+    st.write("")
+    st.write("")
+
+    # ========================================================
+    # CURRENT TOP 3
+    #
+    # This is ONLY rendered on the START PAGE.
+    # It cannot appear on the quiz page because the quiz page
+    # is a separate elif block below.
+    # ========================================================
+
+    st.divider()
+
+    st.subheader(
+        "🏆 Current Top 3"
+    )
+
+    display_leaderboard(
+        top_n=3
+    )
 
 
 # ============================================================
@@ -827,13 +809,14 @@ if st.session_state.page == "start":
 
 elif st.session_state.page == "quiz":
 
-    # ========================================================
-    # ONLY THE QUIZ PAGE IS RENDERED HERE
-    #
-    # There is deliberately NO leaderboard code here.
-    # ========================================================
-
     show_header()
+
+    # ========================================================
+    # QUESTIONS ONLY
+    #
+    # There is deliberately NO start-page content and
+    # NO leaderboard code in this section.
+    # ========================================================
 
     questions = (
         st.session_state.quiz_questions
@@ -1246,7 +1229,7 @@ elif st.session_state.page == "results":
     st.divider()
 
     st.subheader(
-        "🏆 Mosquito Week Leaderboard"
+        "🏆 Leaderboard"
     )
 
     display_leaderboard()
