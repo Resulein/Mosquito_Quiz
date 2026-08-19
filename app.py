@@ -550,21 +550,6 @@ if st.session_state.page == "start":
         """
     )
 
-    # ========================================================
-    # CURRENT TOP 3
-    # ========================================================
-
-    st.divider()
-
-    st.subheader(
-        "🏆 Current Top 3"
-    )
-
-    display_leaderboard(
-        top_n=3
-    )
-
-    st.divider()
 
     # ========================================================
     # PLAYER DETAILS
