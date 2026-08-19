@@ -565,25 +565,29 @@ if st.session_state.page == "start":
     )
 
     email = st.text_input(
-        "Email address (will not be shared)",
+        "Email address",
         value=st.session_state.email,
         placeholder="Enter your email address"
     )
 
-    newsletter = st.selectbox(
-        'Would you like to receive the MCID\'s newsletter "the SPREAD"?',
-        [
-            "Please select",
-            "Yes",
-            "No"
-        ]
-    )
+    # ========================================================
+    # MCID WEBSITE LINK
+    # ========================================================
 
     st.markdown(
         """
 To find out more about the MCID and the research we fund, 
 please check out the [MCID webpage](https://www.mcid.unibe.ch/).
         """
+    )
+
+    newsletter = st.selectbox(
+        "Would you like to receive the SPREAD newsletter?",
+        [
+            "Please select",
+            "Yes",
+            "No"
+        ]
     )
 
     st.write("")
@@ -650,7 +654,7 @@ please check out the [MCID webpage](https://www.mcid.unibe.ch/).
 
             st.error(
                 "Please select whether you would like "
-                "to receive the MCID's newsletter."
+                "to receive the SPREAD newsletter."
             )
 
             st.stop()
