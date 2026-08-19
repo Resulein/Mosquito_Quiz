@@ -521,9 +521,9 @@ if st.session_state.page == "start":
     show_header()
 
     st.subheader(
-        "Test your knowledge of mosquitoes and "
-        "mosquito-borne infectious diseases!"
-    )
+    "It's World Mosquito Week, so to test your knowledge we have put together "
+    "a quick quiz on mosquitoes and mosquito-borne infectious diseases. Enjoy!"
+)
 
     st.markdown(
         """
