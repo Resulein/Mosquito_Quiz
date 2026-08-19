@@ -24,7 +24,9 @@ st.set_page_config(
 QUIZ_LENGTH = 15
 TIME_LIMIT = 15
 
+# IMPORTANT: MOSQUITO QUIZ GOOGLE SHEET
 GOOGLE_SHEET_NAME = "Mosquito Week Leaderboard"
+
 QUESTIONS_FILE = "questions.csv"
 LOGO_FILE = "MCID visual.jpg"
 
@@ -342,9 +344,7 @@ defaults = {
 
     "timeout_started": None,
 
-    "timeout_recorded_for": None,
-
-    "leaderboard_placeholder_active": False
+    "timeout_recorded_for": None
 }
 
 
@@ -388,7 +388,7 @@ def show_header():
 # LEADERBOARD DISPLAY
 # ============================================================
 
-def display_leaderboard(top_n=None):
+def display_leaderboard():
 
     try:
 
@@ -397,7 +397,7 @@ def display_leaderboard(top_n=None):
     except Exception as e:
 
         st.error(
-            f"Unable to load the leaderboard: {e}"
+            f"Unable to load the mosquito quiz leaderboard: {e}"
         )
 
         return
@@ -442,12 +442,6 @@ def display_leaderboard(top_n=None):
             True
         ]
     )
-
-    if top_n is not None:
-
-        leaderboard = leaderboard.head(
-            top_n
-        )
 
     leaderboard = leaderboard.copy()
 
@@ -547,9 +541,19 @@ if st.session_state.page == "start":
 - Your final score is the number of correct answers.
 - If players have the same score, the **fastest total time wins**.
 - Each email address can be used to play **once only**.
+
+### 🏆 Current Top 3
         """
     )
 
+    # ========================================================
+    # TOP 3 REMOVED FROM START PAGE
+    #
+    # The heading remains as part of the introduction,
+    # but the actual leaderboard is NOT displayed here.
+    # ========================================================
+
+    st.divider()
 
     # ========================================================
     # PLAYER DETAILS
@@ -568,7 +572,7 @@ if st.session_state.page == "start":
     )
 
     newsletter = st.selectbox(
-        "Would you like to receive the SPREAD newsletter?",
+        "Would you like to receive the MCID's newsletter \"the SPREAD\"?",
         [
             "Please select",
             "Yes",
@@ -634,13 +638,13 @@ if st.session_state.page == "start":
 
             st.error(
                 "Please select whether you would like "
-                "to receive the SPREAD newsletter."
+                "to receive the MCID's newsletter."
             )
 
             st.stop()
 
         # ----------------------------------------------------
-        # CHECK EMAIL
+        # CHECK EMAIL AGAINST MOSQUITO LEADERBOARD
         # ----------------------------------------------------
 
         try:
@@ -657,7 +661,7 @@ if st.session_state.page == "start":
         except Exception as e:
 
             st.error(
-                f"Unable to check the Google Sheet: {e}"
+                f"Unable to check the Mosquito Week Leaderboard: {e}"
             )
 
             st.stop()
@@ -1155,7 +1159,7 @@ elif st.session_state.page == "results":
             st.session_state.result_saved = True
 
             st.success(
-                "Your score has been added to the leaderboard!"
+                "Your score has been added to the Mosquito Week leaderboard!"
             )
 
         except Exception as e:
@@ -1167,17 +1171,17 @@ elif st.session_state.page == "results":
     else:
 
         st.success(
-            "Your score has been added to the leaderboard!"
+            "Your score has been added to the Mosquito Week leaderboard!"
         )
 
     # ========================================================
-    # FULL LEADERBOARD
+    # MOSQUITO WEEK LEADERBOARD
     # ========================================================
 
     st.divider()
 
     st.subheader(
-        "🏆 Leaderboard"
+        "🏆 Mosquito Week Leaderboard"
     )
 
     display_leaderboard()
