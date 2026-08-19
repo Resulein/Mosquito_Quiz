@@ -521,7 +521,7 @@ if st.session_state.page == "start":
     show_header()
 
     # ========================================================
-    # WELCOME
+    # INTRODUCTION
     # ========================================================
 
     st.subheader(
@@ -767,7 +767,7 @@ if st.session_state.page == "start":
         st.session_state.page = "quiz"
 
         # ----------------------------------------------------
-        # RERUN
+        # RE-RUN
         # ----------------------------------------------------
 
         st.rerun()
