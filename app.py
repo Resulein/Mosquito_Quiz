@@ -22,7 +22,7 @@ st.set_page_config(
 # ============================================================
 
 QUIZ_LENGTH = 15
-TIME_LIMIT = 20
+TIME_LIMIT = 15
 
 GOOGLE_SHEET_NAME = "Mosquito Week Leaderboard"
 QUESTIONS_FILE = "questions.csv"
@@ -540,7 +540,7 @@ if st.session_state.page == "start":
 
 - You will answer **15 questions** about mosquitoes and infectious diseases.
 - Each question has **three possible answers**.
-- You have **20 seconds to answer each question**.
+- You have **15 seconds to answer each question**.
 - Questions are selected randomly.
 - The answer choices are also shuffled.
 - If you run out of time, the question is counted as unanswered.
