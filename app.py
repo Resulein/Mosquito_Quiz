@@ -12,7 +12,7 @@ from google.oauth2.service_account import Credentials
 
 st.set_page_config(
     page_title="MCID Mosquito Quiz",
-    page_icon="🦠",
+    page_icon="🦟",
     layout="centered"
 )
 
@@ -342,7 +342,9 @@ defaults = {
 
     "timeout_started": None,
 
-    "timeout_recorded_for": None
+    "timeout_recorded_for": None,
+
+    "leaderboard_placeholder_active": False
 }
 
 
@@ -379,7 +381,7 @@ def show_header():
 
     with col2:
 
-        st.title("MCID QUIZ")
+        st.title("MCID Mosquito Quiz 🦟")
 
 
 # ============================================================
@@ -511,9 +513,7 @@ def finish_quiz():
 
 
 # ============================================================
-# ============================================================
 # START PAGE
-# ============================================================
 # ============================================================
 
 if st.session_state.page == "start":
@@ -525,8 +525,9 @@ if st.session_state.page == "start":
     # ========================================================
 
     st.subheader(
-        "Test your knowledge of Infectious Diseases, "
-        "and win a cuddly toy!"
+        "As its World Mosquito Week, we would like to test "
+        "your knowledge on mosquitoes and mosquito-borne "
+        "Infectious Disease"
     )
 
     # ========================================================
@@ -537,7 +538,7 @@ if st.session_state.page == "start":
         """
 ### 📝 How to play
 
-- You will answer **15 questions** about infectious diseases.
+- You will answer **15 questions** about mosquitoes and mosquito-borne infectious diseases.
 - Each question has **three possible answers**.
 - You have **15 seconds to answer each question**.
 - Questions are selected randomly.
@@ -563,11 +564,11 @@ if st.session_state.page == "start":
         top_n=3
     )
 
+    st.divider()
+
     # ========================================================
     # PLAYER DETAILS
     # ========================================================
-
-    st.divider()
 
     nickname = st.text_input(
         "Nickname",
@@ -766,16 +767,14 @@ if st.session_state.page == "start":
         st.session_state.page = "quiz"
 
         # ----------------------------------------------------
-        # RE-RUN
+        # RERUN
         # ----------------------------------------------------
 
         st.rerun()
 
 
 # ============================================================
-# ============================================================
 # QUIZ PAGE
-# ============================================================
 # ============================================================
 
 elif st.session_state.page == "quiz":
@@ -1069,9 +1068,7 @@ elif st.session_state.page == "quiz":
 
 
 # ============================================================
-# ============================================================
 # RESULTS PAGE
-# ============================================================
 # ============================================================
 
 elif st.session_state.page == "results":
@@ -1207,5 +1204,5 @@ elif st.session_state.page == "results":
     st.write("")
 
     st.info(
-        "Thanks for taking part in the MCID Quiz!"
+        "Thanks for taking part in the MCID Mosquito Quiz!"
     )
