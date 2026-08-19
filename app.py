@@ -11,7 +11,7 @@ from google.oauth2.service_account import Credentials
 # ============================================================
 
 st.set_page_config(
-    page_title="MCID Quiz",
+    page_title="MCID Mosquito Quiz",
     page_icon="🦠",
     layout="centered"
 )
@@ -24,7 +24,7 @@ st.set_page_config(
 QUIZ_LENGTH = 15
 TIME_LIMIT = 15
 
-GOOGLE_SHEET_NAME = "Quiz Leaderboard"
+GOOGLE_SHEET_NAME = "Mosquito Week Leaderboard"
 QUESTIONS_FILE = "questions.csv"
 LOGO_FILE = "MCID visual.jpg"
 
