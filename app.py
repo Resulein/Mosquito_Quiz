@@ -24,7 +24,11 @@ st.set_page_config(
 QUIZ_LENGTH = 15
 TIME_LIMIT = 15
 
-# IMPORTANT: MOSQUITO QUIZ GOOGLE SHEET
+# ============================================================
+# IMPORTANT:
+# THIS IS THE MOSQUITO QUIZ GOOGLE SHEET
+# ============================================================
+
 GOOGLE_SHEET_NAME = "Mosquito Week Leaderboard"
 
 QUESTIONS_FILE = "questions.csv"
@@ -34,8 +38,18 @@ LOGO_FILE = "MCID visual.jpg"
 # ============================================================
 # GOOGLE SHEETS CONNECTION
 # ============================================================
+#
+# IMPORTANT:
+# There is deliberately NO @st.cache_resource here.
+#
+# This ensures that this app explicitly opens:
+#
+#     Mosquito Week Leaderboard
+#
+# and does not reuse a cached connection from the
+# original MCID Quiz.
+# ============================================================
 
-@st.cache_resource
 def connect_to_google_sheet():
 
     scopes = [
@@ -50,7 +64,13 @@ def connect_to_google_sheet():
 
     client = gspread.authorize(credentials)
 
-    spreadsheet = client.open(GOOGLE_SHEET_NAME)
+    # ========================================================
+    # MOSQUITO QUIZ SPREADSHEET
+    # ========================================================
+
+    spreadsheet = client.open(
+        "Mosquito Week Leaderboard"
+    )
 
     worksheet = spreadsheet.sheet1
 
@@ -78,6 +98,7 @@ def read_sheet():
     values = worksheet.get_all_values()
 
     if not values:
+
         return [], []
 
     headers = values[0]
@@ -102,8 +123,13 @@ def read_sheet():
         for i in valid_indexes:
 
             if i < len(row):
-                clean_row.append(row[i])
+
+                clean_row.append(
+                    row[i]
+                )
+
             else:
+
                 clean_row.append("")
 
         data.append(clean_row)
@@ -112,7 +138,7 @@ def read_sheet():
 
 
 # ============================================================
-# GET LEADERBOARD
+# GET MOSQUITO LEADERBOARD
 # ============================================================
 
 def get_leaderboard():
@@ -147,6 +173,7 @@ def get_leaderboard():
     for column in required_columns:
 
         if column not in leaderboard.columns:
+
             leaderboard[column] = ""
 
     leaderboard["Score"] = pd.to_numeric(
@@ -171,12 +198,16 @@ def email_already_used(email):
     headers, data = read_sheet()
 
     if not headers:
+
         return False
 
     if "Email" not in headers:
+
         return False
 
-    email_index = headers.index("Email")
+    email_index = headers.index(
+        "Email"
+    )
 
     target_email = (
         email.strip()
@@ -194,13 +225,14 @@ def email_already_used(email):
             )
 
             if existing_email == target_email:
+
                 return True
 
     return False
 
 
 # ============================================================
-# SAVE RESULT
+# SAVE RESULT TO MOSQUITO LEADERBOARD
 # ============================================================
 
 def save_result(
@@ -211,9 +243,17 @@ def save_result(
     total_time
 ):
 
+    # ========================================================
+    # THIS CONNECTS DIRECTLY TO:
+    #
+    # Mosquito Week Leaderboard
+    # ========================================================
+
     worksheet = connect_to_google_sheet()
 
-    headers = worksheet.row_values(1)
+    headers = worksheet.row_values(
+        1
+    )
 
     headers = [
         str(header).strip()
@@ -237,7 +277,8 @@ def save_result(
     if missing:
 
         raise Exception(
-            "The Google Sheet is missing these column headers: "
+            "The Mosquito Week Leaderboard is missing "
+            "these column headers: "
             + ", ".join(missing)
             + ". The first row should contain: "
             + ", ".join(required_columns)
@@ -245,7 +286,9 @@ def save_result(
 
     all_values = worksheet.get_all_values()
 
-    next_row = len(all_values) + 1
+    next_row = len(
+        all_values
+    ) + 1
 
     new_row = [
         ""
@@ -270,12 +313,19 @@ def save_result(
 
     new_row[
         headers.index("Total Time")
-    ] = round(total_time, 2)
+    ] = round(
+        total_time,
+        2
+    )
 
     worksheet.update(
         range_name=f"A{next_row}",
         values=[new_row]
     )
+
+    # ========================================================
+    # VERIFY THAT THE RESULT WAS WRITTEN
+    # ========================================================
 
     verification = worksheet.row_values(
         next_row
@@ -284,12 +334,17 @@ def save_result(
     if not verification:
 
         raise Exception(
-            "The score could not be verified in Google Sheets."
+            "The score could not be verified in the "
+            "Mosquito Week Leaderboard."
         )
 
-    score_index = headers.index("Score")
+    score_index = headers.index(
+        "Score"
+    )
 
-    if score_index >= len(verification):
+    if score_index >= len(
+        verification
+    ):
 
         raise Exception(
             "The score column could not be verified."
@@ -299,10 +354,13 @@ def save_result(
         verification[score_index]
     ).strip()
 
-    if saved_score != str(int(score)):
+    if saved_score != str(
+        int(score)
+    ):
 
         raise Exception(
-            "The score was written but could not be verified."
+            "The score was written but could not "
+            "be verified."
         )
 
 
@@ -381,11 +439,13 @@ def show_header():
 
     with col2:
 
-        st.title("MCID Mosquito Quiz 🦟")
+        st.title(
+            "MCID Mosquito Quiz 🦟"
+        )
 
 
 # ============================================================
-# LEADERBOARD DISPLAY
+# DISPLAY MOSQUITO LEADERBOARD
 # ============================================================
 
 def display_leaderboard():
@@ -397,7 +457,8 @@ def display_leaderboard():
     except Exception as e:
 
         st.error(
-            f"Unable to load the mosquito quiz leaderboard: {e}"
+            "Unable to load the Mosquito Week Leaderboard: "
+            f"{e}"
         )
 
         return
@@ -501,7 +562,9 @@ def finish_quiz():
         st.session_state.quiz_start_time
     )
 
-    st.session_state.score = calculate_score()
+    st.session_state.score = (
+        calculate_score()
+    )
 
     st.session_state.page = "results"
 
@@ -542,16 +605,9 @@ if st.session_state.page == "start":
 - If players have the same score, the **fastest total time wins**.
 - Each email address can be used to play **once only**.
 
-### 🏆 Current Top 3
+### 🏆 Good luck!
         """
     )
-
-    # ========================================================
-    # TOP 3 REMOVED FROM START PAGE
-    #
-    # The heading remains as part of the introduction,
-    # but the actual leaderboard is NOT displayed here.
-    # ========================================================
 
     st.divider()
 
@@ -572,7 +628,7 @@ if st.session_state.page == "start":
     )
 
     newsletter = st.selectbox(
-        "Would you like to receive the MCID's newsletter \"the SPREAD\"?",
+        'Would you like to receive the MCID\'s newsletter "the SPREAD"?',
         [
             "Please select",
             "Yes",
@@ -644,7 +700,7 @@ if st.session_state.page == "start":
             st.stop()
 
         # ----------------------------------------------------
-        # CHECK EMAIL AGAINST MOSQUITO LEADERBOARD
+        # CHECK EMAIL IN MOSQUITO LEADERBOARD
         # ----------------------------------------------------
 
         try:
@@ -661,7 +717,8 @@ if st.session_state.page == "start":
         except Exception as e:
 
             st.error(
-                f"Unable to check the Mosquito Week Leaderboard: {e}"
+                "Unable to check the Mosquito Week "
+                f"Leaderboard: {e}"
             )
 
             st.stop()
@@ -693,7 +750,9 @@ if st.session_state.page == "start":
         selected_questions = questions.sample(
             n=QUIZ_LENGTH,
             replace=False
-        ).reset_index(drop=True)
+        ).reset_index(
+            drop=True
+        )
 
         st.session_state.quiz_questions = (
             selected_questions
@@ -756,7 +815,7 @@ if st.session_state.page == "start":
         st.session_state.page = "quiz"
 
         # ----------------------------------------------------
-        # RE-RUN
+        # RERUN
         # ----------------------------------------------------
 
         st.rerun()
@@ -938,7 +997,9 @@ elif st.session_state.page == "quiz":
 
         st.session_state.show_timeout = True
 
-        st.session_state.timeout_started = time.time()
+        st.session_state.timeout_started = (
+            time.time()
+        )
 
         st.rerun()
 
@@ -1159,7 +1220,8 @@ elif st.session_state.page == "results":
             st.session_state.result_saved = True
 
             st.success(
-                "Your score has been added to the Mosquito Week leaderboard!"
+                "Your score has been added to the "
+                "Mosquito Week leaderboard!"
             )
 
         except Exception as e:
@@ -1171,7 +1233,8 @@ elif st.session_state.page == "results":
     else:
 
         st.success(
-            "Your score has been added to the Mosquito Week leaderboard!"
+            "Your score has been added to the "
+            "Mosquito Week leaderboard!"
         )
 
     # ========================================================
