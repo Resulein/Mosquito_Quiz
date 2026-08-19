@@ -551,13 +551,20 @@ if st.session_state.page == "start":
         placeholder="Enter your nickname"
     )
 
-    email = st.text_input(
-        "Email address",
-        value=st.session_state.email,
-        placeholder="Enter your email address"
-    )
+email = st.text_input(
+    "Email address",
+    value=st.session_state.email,
+    placeholder="Enter your email address"
+)
 
-    newsletter = st.selectbox(
+st.markdown(
+    """
+To find out more about the MCID and the research we fund, 
+please check out the [MCID webpage](https://www.mcid.unibe.ch/).
+"""
+)
+
+newsletter = st.selectbox(
         "Would you like to receive the SPREAD newsletter?",
         [
             "Please select",
