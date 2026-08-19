@@ -565,7 +565,7 @@ if st.session_state.page == "start":
     )
 
     email = st.text_input(
-        "Email address",
+        "Email address (will not be shared)",
         value=st.session_state.email,
         placeholder="Enter your email address"
     )
@@ -806,17 +806,29 @@ elif st.session_state.page == "quiz":
         st.session_state.current_question
     )
 
+    # ========================================================
+    # SAFETY CHECK
+    # ========================================================
+
     if questions is None:
 
         st.session_state.page = "start"
 
         st.rerun()
 
+    # ========================================================
+    # CHECK COMPLETE
+    # ========================================================
+
     if question_number >= QUIZ_LENGTH:
 
         finish_quiz()
 
         st.rerun()
+
+    # ========================================================
+    # TIMEOUT SCREEN
+    # ========================================================
 
     if st.session_state.show_timeout:
 
@@ -869,6 +881,10 @@ elif st.session_state.page == "quiz":
 
             st.rerun()
 
+    # ========================================================
+    # CURRENT QUESTION
+    # ========================================================
+
     question = questions.iloc[
         question_number
     ]
@@ -893,10 +909,18 @@ elif st.session_state.page == "quiz":
         question.iloc[4]
     )
 
+    # ========================================================
+    # QUESTION NUMBER
+    # ========================================================
+
     st.subheader(
         f"Question {question_number + 1} "
         f"of {QUIZ_LENGTH}"
     )
+
+    # ========================================================
+    # TIMER
+    # ========================================================
 
     elapsed = (
         time.time()
@@ -912,6 +936,10 @@ elif st.session_state.page == "quiz":
     st.markdown(
         f"## ⏱️ {remaining} seconds"
     )
+
+    # ========================================================
+    # TIMEOUT CHECK
+    # ========================================================
 
     if elapsed >= TIME_LIMIT:
 
@@ -942,6 +970,10 @@ elif st.session_state.page == "quiz":
 
         st.rerun()
 
+    # ========================================================
+    # QUESTION
+    # ========================================================
+
     st.write("")
 
     st.markdown(
@@ -949,6 +981,10 @@ elif st.session_state.page == "quiz":
     )
 
     st.write("")
+
+    # ========================================================
+    # SHUFFLE ANSWERS
+    # ========================================================
 
     if (
         st.session_state.answers_for_question
@@ -976,6 +1012,10 @@ elif st.session_state.page == "quiz":
     answers = (
         st.session_state.current_answers
     )
+
+    # ========================================================
+    # ANSWER BUTTONS
+    # ========================================================
 
     for answer in answers:
 
@@ -1006,6 +1046,10 @@ elif st.session_state.page == "quiz":
 
             })
 
+            # ------------------------------------------------
+            # NEXT QUESTION
+            # ------------------------------------------------
+
             st.session_state.current_question += 1
 
             st.session_state.question_start_time = (
@@ -1018,6 +1062,10 @@ elif st.session_state.page == "quiz":
 
             st.session_state.timeout_recorded_for = None
 
+            # ------------------------------------------------
+            # FINISHED?
+            # ------------------------------------------------
+
             if (
                 st.session_state.current_question
                 >= QUIZ_LENGTH
@@ -1026,6 +1074,10 @@ elif st.session_state.page == "quiz":
                 finish_quiz()
 
             st.rerun()
+
+    # ========================================================
+    # TIMER REFRESH
+    # ========================================================
 
     time.sleep(1)
 
@@ -1040,6 +1092,10 @@ elif st.session_state.page == "results":
 
     show_header()
 
+    # ========================================================
+    # CALCULATE SCORE
+    # ========================================================
+
     score = calculate_score()
 
     st.session_state.score = score
@@ -1047,6 +1103,10 @@ elif st.session_state.page == "results":
     final_time = (
         st.session_state.final_time
     )
+
+    # ========================================================
+    # RESULTS
+    # ========================================================
 
     st.subheader(
         "🎉 Quiz complete!"
@@ -1060,6 +1120,10 @@ elif st.session_state.page == "results":
         f"Your total time was "
         f"**{final_time:.2f} seconds**."
     )
+
+    # ========================================================
+    # YOUR ANSWERS
+    # ========================================================
 
     st.divider()
 
@@ -1104,6 +1168,10 @@ elif st.session_state.page == "results":
             use_container_width=True
         )
 
+    # ========================================================
+    # SAVE SCORE
+    # ========================================================
+
     if not st.session_state.result_saved:
 
         try:
@@ -1134,6 +1202,10 @@ elif st.session_state.page == "results":
             "Your score has been added to the leaderboard!"
         )
 
+    # ========================================================
+    # FULL LEADERBOARD
+    # ========================================================
+
     st.divider()
 
     st.subheader(
@@ -1141,6 +1213,10 @@ elif st.session_state.page == "results":
     )
 
     display_leaderboard()
+
+    # ========================================================
+    # THANK YOU
+    # ========================================================
 
     st.write("")
 
