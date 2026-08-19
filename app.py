@@ -11,7 +11,7 @@ from google.oauth2.service_account import Credentials
 # ============================================================
 
 st.set_page_config(
-    page_title="Mosquito Quiz",
+    page_title="MCID Mosquito Quiz",
     page_icon="🦟",
     layout="centered"
 )
