@@ -636,10 +636,12 @@ if st.session_state.page == "start":
         # INTRODUCTION
         # ====================================================
 
-        st.subheader(
-            "As it is World Mosquito Day, we would like to test "
-            "your knowledge of mosquitoes and mosquito-borne "
-            "infectious diseases."
+        st.markdown(
+        """
+        ### Think you know your mosquitoes?
+
+        Take our World Mosquito Day quiz and put your knowledge of mosquitoes and mosquito-borne diseases to the test!
+        """
         )
 
         # ====================================================
