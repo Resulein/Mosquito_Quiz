@@ -64,7 +64,9 @@ def connect_to_google_sheet():
 @st.cache_data
 def load_questions():
 
-    return pd.read_csv(QUESTIONS_FILE)
+    return pd.read_csv(
+        QUESTIONS_FILE
+    )
 
 
 # ============================================================
@@ -78,6 +80,7 @@ def read_sheet():
     values = worksheet.get_all_values()
 
     if not values:
+
         return [], []
 
     headers = values[0]
@@ -102,11 +105,18 @@ def read_sheet():
         for i in valid_indexes:
 
             if i < len(row):
-                clean_row.append(row[i])
+
+                clean_row.append(
+                    row[i]
+                )
+
             else:
+
                 clean_row.append("")
 
-        data.append(clean_row)
+        data.append(
+            clean_row
+        )
 
     return clean_headers, data
 
@@ -147,6 +157,7 @@ def get_leaderboard():
     for column in required_columns:
 
         if column not in leaderboard.columns:
+
             leaderboard[column] = ""
 
     leaderboard["Score"] = pd.to_numeric(
@@ -171,14 +182,20 @@ def email_already_used(email):
     headers, data = read_sheet()
 
     if not headers:
+
         return False
 
     if "Email" not in headers:
+
         return False
 
-    email_index = headers.index("Email")
+    email_index = headers.index(
+        "Email"
+    )
 
-    target_email = email.strip().lower()
+    target_email = (
+        email.strip().lower()
+    )
 
     for row in data:
 
@@ -191,6 +208,7 @@ def email_already_used(email):
             )
 
             if existing_email == target_email:
+
                 return True
 
     return False
@@ -210,7 +228,9 @@ def save_result(
 
     worksheet = connect_to_google_sheet()
 
-    headers = worksheet.row_values(1)
+    headers = worksheet.row_values(
+        1
+    )
 
     headers = [
         str(header).strip()
@@ -243,7 +263,9 @@ def save_result(
 
     all_values = worksheet.get_all_values()
 
-    next_row = len(all_values) + 1
+    next_row = len(
+        all_values
+    ) + 1
 
     new_row = [
         ""
@@ -293,7 +315,9 @@ def save_result(
         "Score"
     )
 
-    if score_index >= len(verification):
+    if score_index >= len(
+        verification
+    ):
 
         raise Exception(
             "The score column could not be verified."
@@ -303,7 +327,9 @@ def save_result(
         verification[score_index]
     ).strip()
 
-    if saved_score != str(int(score)):
+    if saved_score != str(
+        int(score)
+    ):
 
         raise Exception(
             "The score was written but could not "
@@ -317,26 +343,7 @@ def save_result(
 
 defaults = {
 
-    # --------------------------------------------------------
-    # PAGE STATES:
-    #
-    # start
-    # countdown
-    # quiz
-    # results
-    # --------------------------------------------------------
-
     "page": "start",
-
-    # --------------------------------------------------------
-    # COUNTDOWN
-    # --------------------------------------------------------
-
-    "countdown": 5,
-
-    # --------------------------------------------------------
-    # QUIZ
-    # --------------------------------------------------------
 
     "quiz_questions": None,
 
@@ -346,19 +353,11 @@ defaults = {
 
     "question_start_time": None,
 
-    # --------------------------------------------------------
-    # PLAYER
-    # --------------------------------------------------------
-
     "nickname": "",
 
     "email": "",
 
     "newsletter": "Please select",
-
-    # --------------------------------------------------------
-    # ANSWERS
-    # --------------------------------------------------------
 
     "answers": [],
 
@@ -368,17 +367,9 @@ defaults = {
 
     "result_saved": False,
 
-    # --------------------------------------------------------
-    # ANSWER SHUFFLING
-    # --------------------------------------------------------
-
     "current_answers": None,
 
     "answers_for_question": None,
-
-    # --------------------------------------------------------
-    # TIMEOUT
-    # --------------------------------------------------------
 
     "show_timeout": False,
 
@@ -393,6 +384,30 @@ for key, value in defaults.items():
     if key not in st.session_state:
 
         st.session_state[key] = value
+
+
+# ============================================================
+# ONE SINGLE PAGE PLACEHOLDER
+#
+# EVERYTHING visible in the app goes inside this placeholder.
+#
+# This is important:
+#
+# START PAGE
+#     ↓
+# placeholder is emptied
+#     ↓
+# COUNTDOWN
+#     ↓
+# placeholder is emptied
+#     ↓
+# QUIZ
+#
+# There should therefore be no old Start Page elements left
+# underneath the quiz.
+# ============================================================
+
+page = st.empty()
 
 
 # ============================================================
@@ -590,7 +605,9 @@ def display_top3_leaderboard():
         )
     )
 
-    top3 = leaderboard.head(3).copy()
+    top3 = leaderboard.head(
+        3
+    ).copy()
 
     public_board = top3[
         [
@@ -647,29 +664,548 @@ def finish_quiz():
 
 
 # ============================================================
+# RENDER COUNTDOWN
+# ============================================================
+
+def run_quiz_countdown():
+
+    # --------------------------------------------------------
+    # IMPORTANT:
+    # FIRST EMPTY THE ENTIRE OLD START PAGE
+    # --------------------------------------------------------
+
+    page.empty()
+
+    # --------------------------------------------------------
+    # COUNTDOWN 5 → 0
+    # --------------------------------------------------------
+
+    for number in range(
+        5,
+        -1,
+        -1
+    ):
+
+        page.empty()
+
+        with page.container():
+
+            st.write("")
+
+            st.write("")
+
+            st.markdown(
+                "<div style='text-align:center;'>"
+                "<h2>Your personal quiz will start shortly</h2>"
+                "</div>",
+                unsafe_allow_html=True
+            )
+
+            st.write("")
+
+            st.markdown(
+                f"<div style='text-align:center;'>"
+                f"<h1>{number}</h1>"
+                f"</div>",
+                unsafe_allow_html=True
+            )
+
+        time.sleep(1)
+
+    # --------------------------------------------------------
+    # CLEAR COUNTDOWN COMPLETELY
+    # --------------------------------------------------------
+
+    page.empty()
+
+
+# ============================================================
+# RENDER QUIZ
+# ============================================================
+
+def render_quiz():
+
+    page.empty()
+
+    with page.container():
+
+        show_header()
+
+        questions = (
+            st.session_state.quiz_questions
+        )
+
+        question_number = (
+            st.session_state.current_question
+        )
+
+        # ====================================================
+        # SAFETY CHECK
+        # ====================================================
+
+        if questions is None:
+
+            st.session_state.page = "start"
+
+            page.empty()
+
+            st.rerun()
+
+        # ====================================================
+        # CHECK COMPLETE
+        # ====================================================
+
+        if question_number >= QUIZ_LENGTH:
+
+            finish_quiz()
+
+            page.empty()
+
+            st.rerun()
+
+        # ====================================================
+        # TIMEOUT SCREEN
+        # ====================================================
+
+        if st.session_state.show_timeout:
+
+            st.subheader(
+                f"Question {question_number + 1} "
+                f"of {QUIZ_LENGTH}"
+            )
+
+            st.error(
+                "⏰ TIME'S UP!"
+            )
+
+            if (
+                time.time()
+                -
+                st.session_state.timeout_started
+                >= 1
+            ):
+
+                st.session_state.show_timeout = False
+
+                st.session_state.timeout_started = None
+
+                st.session_state.current_question += 1
+
+                st.session_state.current_answers = None
+
+                st.session_state.answers_for_question = None
+
+                st.session_state.timeout_recorded_for = None
+
+                if (
+                    st.session_state.current_question
+                    >= QUIZ_LENGTH
+                ):
+
+                    finish_quiz()
+
+                else:
+
+                    st.session_state.question_start_time = (
+                        time.time()
+                    )
+
+                page.empty()
+
+                st.rerun()
+
+            else:
+
+                time.sleep(0.1)
+
+                page.empty()
+
+                st.rerun()
+
+        # ====================================================
+        # CURRENT QUESTION
+        # ====================================================
+
+        question = questions.iloc[
+            question_number
+        ]
+
+        question_text = str(
+            question.iloc[0]
+        )
+
+        option_a = str(
+            question.iloc[1]
+        )
+
+        option_b = str(
+            question.iloc[2]
+        )
+
+        option_c = str(
+            question.iloc[3]
+        )
+
+        correct_answer = str(
+            question.iloc[4]
+        )
+
+        # ====================================================
+        # QUESTION NUMBER
+        # ====================================================
+
+        st.subheader(
+            f"Question {question_number + 1} "
+            f"of {QUIZ_LENGTH}"
+        )
+
+        # ====================================================
+        # TIMER
+        # ====================================================
+
+        elapsed = (
+            time.time()
+            -
+            st.session_state.question_start_time
+        )
+
+        remaining = max(
+            0,
+            TIME_LIMIT - int(elapsed)
+        )
+
+        st.markdown(
+            f"## ⏱️ {remaining} seconds"
+        )
+
+        # ====================================================
+        # TIMEOUT CHECK
+        # ====================================================
+
+        if elapsed >= TIME_LIMIT:
+
+            if (
+                st.session_state.timeout_recorded_for
+                != question_number
+            ):
+
+                st.session_state.answers.append({
+
+                    "question": question_text,
+
+                    "answer": "No answer",
+
+                    "correct": correct_answer,
+
+                    "is_correct": False
+
+                })
+
+                st.session_state.timeout_recorded_for = (
+                    question_number
+                )
+
+            st.session_state.show_timeout = True
+
+            st.session_state.timeout_started = (
+                time.time()
+            )
+
+            page.empty()
+
+            st.rerun()
+
+        # ====================================================
+        # QUESTION
+        # ====================================================
+
+        st.write("")
+
+        st.markdown(
+            f"### {question_text}"
+        )
+
+        st.write("")
+
+        # ====================================================
+        # SHUFFLE ANSWERS
+        # ====================================================
+
+        if (
+            st.session_state.answers_for_question
+            != question_number
+        ):
+
+            answers = [
+                option_a,
+                option_b,
+                option_c
+            ]
+
+            random.shuffle(
+                answers
+            )
+
+            st.session_state.current_answers = (
+                answers
+            )
+
+            st.session_state.answers_for_question = (
+                question_number
+            )
+
+        answers = (
+            st.session_state.current_answers
+        )
+
+        # ====================================================
+        # ANSWER BUTTONS
+        # ====================================================
+
+        for answer in answers:
+
+            if st.button(
+                answer,
+                use_container_width=True
+            ):
+
+                is_correct = (
+                    str(answer)
+                    .strip()
+                    .lower()
+                    ==
+                    str(correct_answer)
+                    .strip()
+                    .lower()
+                )
+
+                st.session_state.answers.append({
+
+                    "question": question_text,
+
+                    "answer": answer,
+
+                    "correct": correct_answer,
+
+                    "is_correct": is_correct
+
+                })
+
+                # --------------------------------------------
+                # NEXT QUESTION
+                # --------------------------------------------
+
+                st.session_state.current_question += 1
+
+                st.session_state.question_start_time = (
+                    time.time()
+                )
+
+                st.session_state.current_answers = None
+
+                st.session_state.answers_for_question = None
+
+                st.session_state.timeout_recorded_for = None
+
+                # --------------------------------------------
+                # FINISHED?
+                # --------------------------------------------
+
+                if (
+                    st.session_state.current_question
+                    >= QUIZ_LENGTH
+                ):
+
+                    finish_quiz()
+
+                page.empty()
+
+                st.rerun()
+
+        # ====================================================
+        # TIMER REFRESH
+        # ====================================================
+
+        time.sleep(1)
+
+        page.empty()
+
+        st.rerun()
+
+
+# ============================================================
+# RENDER RESULTS
+# ============================================================
+
+def render_results():
+
+    page.empty()
+
+    with page.container():
+
+        show_header()
+
+        # ====================================================
+        # SCORE
+        # ====================================================
+
+        score = calculate_score()
+
+        st.session_state.score = score
+
+        final_time = (
+            st.session_state.final_time
+        )
+
+        # ====================================================
+        # RESULTS
+        # ====================================================
+
+        st.subheader(
+            "🎉 Quiz complete!"
+        )
+
+        st.markdown(
+            f"## {score} / {QUIZ_LENGTH}"
+        )
+
+        st.write(
+            f"Your total time was "
+            f"**{final_time:.2f} seconds**."
+        )
+
+        # ====================================================
+        # YOUR ANSWERS
+        # ====================================================
+
+        st.divider()
+
+        st.subheader(
+            "📝 Your answers"
+        )
+
+        results_table = []
+
+        for number, answer_data in enumerate(
+            st.session_state.answers,
+            start=1
+        ):
+
+            results_table.append({
+
+                "#": number,
+
+                "Question": answer_data["question"],
+
+                "Your answer": answer_data["answer"],
+
+                "Correct answer": answer_data["correct"],
+
+                "Result": (
+                    "✅"
+                    if answer_data["is_correct"]
+                    else "❌"
+                )
+
+            })
+
+        if results_table:
+
+            results_df = pd.DataFrame(
+                results_table
+            )
+
+            st.dataframe(
+                results_df,
+                hide_index=True,
+                use_container_width=True
+            )
+
+        # ====================================================
+        # SAVE SCORE
+        # ====================================================
+
+        if not st.session_state.result_saved:
+
+            try:
+
+                save_result(
+                    nickname=st.session_state.nickname,
+                    email=st.session_state.email,
+                    newsletter=st.session_state.newsletter,
+                    score=score,
+                    total_time=final_time
+                )
+
+                st.session_state.result_saved = True
+
+                st.success(
+                    "Your score has been added to the "
+                    "Mosquito Day leaderboard!"
+                )
+
+            except Exception as e:
+
+                st.error(
+                    f"Problem saving your score: {e}"
+                )
+
+        else:
+
+            st.success(
+                "Your score has been added to the "
+                "Mosquito Day leaderboard!"
+            )
+
+        # ====================================================
+        # LEADERBOARD
+        # ====================================================
+
+        st.divider()
+
+        st.subheader(
+            "🏆 Mosquito Day Leaderboard"
+        )
+
+        display_leaderboard()
+
+        # ====================================================
+        # THANK YOU
+        # ====================================================
+
+        st.write("")
+
+        st.info(
+            "Thanks for taking part in the MCID Mosquito Quiz!"
+        )
+
+
+# ============================================================
 # START PAGE
 # ============================================================
 
 if st.session_state.page == "start":
 
-    show_header()
+    with page.container():
 
-    # ========================================================
-    # INTRODUCTION
-    # ========================================================
+        show_header()
 
-    st.subheader(
-        "As its World Mosquito Day, we would like to test "
-        "your knowledge of mosquitoes and mosquito-borne "
-        "Infectious Disease"
-    )
+        # ====================================================
+        # INTRODUCTION
+        # ====================================================
 
-    # ========================================================
-    # INSTRUCTIONS
-    # ========================================================
+        st.subheader(
+            "As its World Mosquito Day, we would like to test "
+            "your knowledge of mosquitoes and mosquito-borne "
+            "Infectious Disease"
+        )
 
-    st.markdown(
-        """
+        # ====================================================
+        # INSTRUCTIONS
+        # ====================================================
+
+        st.markdown(
+            """
 ### 📝 How to play
 
 - You will answer **15 questions** about mosquitoes and mosquito-borne infectious diseases.
@@ -683,315 +1219,265 @@ if st.session_state.page == "start":
 - Each email address can be used to play **once only**.
 
 ### 🏆 Good luck!
-        """
-    )
+            """
+        )
 
-    st.divider()
+        st.divider()
 
-    # ========================================================
-    # PLAYER DETAILS
-    # ========================================================
+        # ====================================================
+        # PLAYER DETAILS
+        # ====================================================
 
-    nickname = st.text_input(
-        "Nickname",
-        value=st.session_state.nickname,
-        placeholder="Enter your nickname"
-    )
+        nickname = st.text_input(
+            "Nickname",
+            value=st.session_state.nickname,
+            placeholder="Enter your nickname"
+        )
 
-    email = st.text_input(
-        "Email address",
-        value=st.session_state.email,
-        placeholder="Enter your email address"
-    )
+        email = st.text_input(
+            "Email address",
+            value=st.session_state.email,
+            placeholder="Enter your email address"
+        )
 
-    newsletter = st.selectbox(
-        'Would you like to receive the MCID\'s newsletter "the SPREAD"?',
-        [
-            "Please select",
-            "Yes",
-            "No"
-        ]
-    )
+        newsletter = st.selectbox(
+            'Would you like to receive the MCID\'s newsletter "the SPREAD"?',
+            [
+                "Please select",
+                "Yes",
+                "No"
+            ]
+        )
 
-    # ========================================================
-    # MCID WEBPAGE
-    # ========================================================
+        # ====================================================
+        # MCID WEBPAGE
+        # ====================================================
 
-    st.markdown(
-        'To find out more about the MCID, please check out our '
-        '[webpage](https://mcid.unibe.ch).'
-    )
+        st.markdown(
+            'To find out more about the MCID, please check out our '
+            '[webpage](https://mcid.unibe.ch).'
+        )
 
-    st.write("")
+        st.write("")
 
-    # ========================================================
-    # START BUTTON
-    # ========================================================
+        # ====================================================
+        # START BUTTON
+        # ====================================================
 
-    start_clicked = st.button(
-        "START QUIZ",
-        type="primary",
-        use_container_width=True
-    )
+        start_clicked = st.button(
+            "START QUIZ",
+            type="primary",
+            use_container_width=True
+        )
 
-    st.write("")
+        st.write("")
 
-    # ========================================================
-    # TOP 3 LEADERBOARD
-    # ========================================================
+        # ====================================================
+        # TOP 3
+        # ====================================================
 
-    st.subheader(
-        "🏆 Top 3"
-    )
+        st.subheader(
+            "🏆 Top 3"
+        )
 
-    display_top3_leaderboard()
+        display_top3_leaderboard()
 
-    # ========================================================
-    # START BUTTON ACTION
-    # ========================================================
+        # ====================================================
+        # START QUIZ
+        # ====================================================
 
-    if start_clicked:
+        if start_clicked:
 
-        # ----------------------------------------------------
-        # VALIDATE NICKNAME
-        # ----------------------------------------------------
+            # ------------------------------------------------
+            # VALIDATE NICKNAME
+            # ------------------------------------------------
 
-        if not nickname.strip():
-
-            st.error(
-                "Please enter a nickname."
-            )
-
-            st.stop()
-
-        # ----------------------------------------------------
-        # VALIDATE EMAIL
-        # ----------------------------------------------------
-
-        if not email.strip():
-
-            st.error(
-                "Please enter your email address."
-            )
-
-            st.stop()
-
-        if "@" not in email or "." not in email:
-
-            st.error(
-                "Please enter a valid email address."
-            )
-
-            st.stop()
-
-        # ----------------------------------------------------
-        # VALIDATE NEWSLETTER
-        # ----------------------------------------------------
-
-        if newsletter == "Please select":
-
-            st.error(
-                "Please select whether you would like "
-                "to receive the MCID's newsletter."
-            )
-
-            st.stop()
-
-        # ----------------------------------------------------
-        # CHECK EMAIL
-        # ----------------------------------------------------
-
-        try:
-
-            if email_already_used(email):
+            if not nickname.strip():
 
                 st.error(
-                    "This email address has already been used "
-                    "to play the quiz. Each player can only play once."
+                    "Please enter a nickname."
                 )
 
                 st.stop()
 
-        except Exception as e:
+            # ------------------------------------------------
+            # VALIDATE EMAIL
+            # ------------------------------------------------
 
-            st.error(
-                "Unable to check the Mosquito Week "
-                f"Leaderboard: {e}"
+            if not email.strip():
+
+                st.error(
+                    "Please enter your email address."
+                )
+
+                st.stop()
+
+            if "@" not in email or "." not in email:
+
+                st.error(
+                    "Please enter a valid email address."
+                )
+
+                st.stop()
+
+            # ------------------------------------------------
+            # VALIDATE NEWSLETTER
+            # ------------------------------------------------
+
+            if newsletter == "Please select":
+
+                st.error(
+                    "Please select whether you would like "
+                    "to receive the MCID's newsletter."
+                )
+
+                st.stop()
+
+            # ------------------------------------------------
+            # CHECK EMAIL
+            # ------------------------------------------------
+
+            try:
+
+                if email_already_used(email):
+
+                    st.error(
+                        "This email address has already been used "
+                        "to play the quiz. Each player can only play once."
+                    )
+
+                    st.stop()
+
+            except Exception as e:
+
+                st.error(
+                    "Unable to check the Mosquito Week "
+                    f"Leaderboard: {e}"
+                )
+
+                st.stop()
+
+            # ------------------------------------------------
+            # LOAD QUESTIONS
+            # ------------------------------------------------
+
+            questions = load_questions()
+
+            questions = questions.dropna(
+                how="all"
             )
 
-            st.stop()
+            if len(questions) < QUIZ_LENGTH:
 
-        # ----------------------------------------------------
-        # LOAD QUESTIONS
-        # ----------------------------------------------------
+                st.error(
+                    f"The question bank contains only "
+                    f"{len(questions)} questions. "
+                    f"You need at least {QUIZ_LENGTH} questions."
+                )
 
-        questions = load_questions()
+                st.stop()
 
-        questions = questions.dropna(
-            how="all"
-        )
+            # ------------------------------------------------
+            # SELECT QUESTIONS
+            # ------------------------------------------------
 
-        if len(questions) < QUIZ_LENGTH:
-
-            st.error(
-                f"The question bank contains only "
-                f"{len(questions)} questions. "
-                f"You need at least {QUIZ_LENGTH} questions."
+            selected_questions = questions.sample(
+                n=QUIZ_LENGTH,
+                replace=False
+            ).reset_index(
+                drop=True
             )
 
+            st.session_state.quiz_questions = (
+                selected_questions
+            )
+
+            # ------------------------------------------------
+            # PLAYER INFORMATION
+            # ------------------------------------------------
+
+            st.session_state.nickname = (
+                nickname.strip()
+            )
+
+            st.session_state.email = (
+                email.strip()
+            )
+
+            st.session_state.newsletter = (
+                newsletter
+            )
+
+            # ------------------------------------------------
+            # RESET QUIZ
+            # ------------------------------------------------
+
+            st.session_state.current_question = 0
+
+            st.session_state.answers = []
+
+            st.session_state.score = 0
+
+            st.session_state.final_time = 0
+
+            st.session_state.result_saved = False
+
+            st.session_state.current_answers = None
+
+            st.session_state.answers_for_question = None
+
+            st.session_state.show_timeout = False
+
+            st.session_state.timeout_started = None
+
+            st.session_state.timeout_recorded_for = None
+
+            # ------------------------------------------------
+            # START TIMER
+            # ------------------------------------------------
+
+            now = time.time()
+
+            st.session_state.quiz_start_time = now
+
+            st.session_state.question_start_time = now
+
+            # ------------------------------------------------
+            # CHANGE STATE
+            # ------------------------------------------------
+
+            st.session_state.page = "quiz"
+
+            # ------------------------------------------------
+            # IMPORTANT:
+            #
+            # Do NOT call st.rerun() here.
+            #
+            # Instead, immediately empty the placeholder and
+            # replace the Start Page with the countdown.
+            # ------------------------------------------------
+
+            page.empty()
+
+            # ------------------------------------------------
+            # RUN COUNTDOWN
+            # ------------------------------------------------
+
+            run_quiz_countdown()
+
+            # ------------------------------------------------
+            # NOW RENDER FIRST QUESTION
+            # ------------------------------------------------
+
+            render_quiz()
+
+            # ------------------------------------------------
+            # STOP THIS EXECUTION
+            #
+            # The quiz is now being handled by render_quiz().
+            # ------------------------------------------------
+
             st.stop()
-
-        # ----------------------------------------------------
-        # SELECT QUESTIONS
-        # ----------------------------------------------------
-
-        selected_questions = questions.sample(
-            n=QUIZ_LENGTH,
-            replace=False
-        ).reset_index(
-            drop=True
-        )
-
-        st.session_state.quiz_questions = (
-            selected_questions
-        )
-
-        # ----------------------------------------------------
-        # SAVE PLAYER INFORMATION
-        # ----------------------------------------------------
-
-        st.session_state.nickname = (
-            nickname.strip()
-        )
-
-        st.session_state.email = (
-            email.strip()
-        )
-
-        st.session_state.newsletter = (
-            newsletter
-        )
-
-        # ----------------------------------------------------
-        # RESET QUIZ
-        # ----------------------------------------------------
-
-        st.session_state.current_question = 0
-
-        st.session_state.answers = []
-
-        st.session_state.score = 0
-
-        st.session_state.final_time = 0
-
-        st.session_state.result_saved = False
-
-        st.session_state.current_answers = None
-
-        st.session_state.answers_for_question = None
-
-        st.session_state.show_timeout = False
-
-        st.session_state.timeout_started = None
-
-        st.session_state.timeout_recorded_for = None
-
-        # ----------------------------------------------------
-        # SET COUNTDOWN
-        # ----------------------------------------------------
-
-        st.session_state.countdown = 5
-
-        # ----------------------------------------------------
-        # IMPORTANT
-        #
-        # We do NOT go directly to the quiz.
-        #
-        # We first go to a completely different page state.
-        # ----------------------------------------------------
-
-        st.session_state.page = "countdown"
-
-        # ----------------------------------------------------
-        # RERUN
-        # ----------------------------------------------------
-
-        st.rerun()
-
-
-# ============================================================
-# COUNTDOWN PAGE
-# ============================================================
-
-elif st.session_state.page == "countdown":
-
-    # ========================================================
-    # THIS IS A COMPLETELY SEPARATE PAGE STATE
-    #
-    # Nothing from the start page is rendered here.
-    # ========================================================
-
-    st.write("")
-
-    st.write("")
-
-    st.markdown(
-        "<div style='text-align:center;'>"
-        "<h2>Your personal quiz will start shortly</h2>"
-        "</div>",
-        unsafe_allow_html=True
-    )
-
-    st.write("")
-
-    countdown_value = (
-        st.session_state.countdown
-    )
-
-    st.markdown(
-        f"""
-        <div style="
-            text-align:center;
-            font-size:80px;
-            font-weight:bold;
-            margin-top:30px;
-            margin-bottom:30px;
-        ">
-            {countdown_value}
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-    # ========================================================
-    # COUNTDOWN
-    # ========================================================
-
-    if countdown_value > 0:
-
-        time.sleep(1)
-
-        st.session_state.countdown -= 1
-
-        st.rerun()
-
-    else:
-
-        # ----------------------------------------------------
-        # COUNTDOWN HAS REACHED ZERO
-        # ----------------------------------------------------
-
-        now = time.time()
-
-        st.session_state.quiz_start_time = now
-
-        st.session_state.question_start_time = now
-
-        st.session_state.current_question = 0
-
-        st.session_state.page = "quiz"
-
-        st.rerun()
 
 
 # ============================================================
@@ -1000,300 +1486,7 @@ elif st.session_state.page == "countdown":
 
 elif st.session_state.page == "quiz":
 
-    # ========================================================
-    # QUIZ PAGE ONLY
-    #
-    # There is deliberately NO start-page content here.
-    # ========================================================
-
-    show_header()
-
-    questions = (
-        st.session_state.quiz_questions
-    )
-
-    question_number = (
-        st.session_state.current_question
-    )
-
-    # ========================================================
-    # SAFETY CHECK
-    # ========================================================
-
-    if questions is None:
-
-        st.session_state.page = "start"
-
-        st.rerun()
-
-    # ========================================================
-    # CHECK COMPLETE
-    # ========================================================
-
-    if question_number >= QUIZ_LENGTH:
-
-        finish_quiz()
-
-        st.rerun()
-
-    # ========================================================
-    # TIMEOUT SCREEN
-    # ========================================================
-
-    if st.session_state.show_timeout:
-
-        st.subheader(
-            f"Question {question_number + 1} "
-            f"of {QUIZ_LENGTH}"
-        )
-
-        st.error(
-            "⏰ TIME'S UP!"
-        )
-
-        if (
-            time.time()
-            -
-            st.session_state.timeout_started
-            >= 1
-        ):
-
-            st.session_state.show_timeout = False
-
-            st.session_state.timeout_started = None
-
-            st.session_state.current_question += 1
-
-            st.session_state.current_answers = None
-
-            st.session_state.answers_for_question = None
-
-            st.session_state.timeout_recorded_for = None
-
-            if (
-                st.session_state.current_question
-                >= QUIZ_LENGTH
-            ):
-
-                finish_quiz()
-
-            else:
-
-                st.session_state.question_start_time = (
-                    time.time()
-                )
-
-            st.rerun()
-
-        else:
-
-            time.sleep(0.1)
-
-            st.rerun()
-
-    # ========================================================
-    # CURRENT QUESTION
-    # ========================================================
-
-    question = questions.iloc[
-        question_number
-    ]
-
-    question_text = str(
-        question.iloc[0]
-    )
-
-    option_a = str(
-        question.iloc[1]
-    )
-
-    option_b = str(
-        question.iloc[2]
-    )
-
-    option_c = str(
-        question.iloc[3]
-    )
-
-    correct_answer = str(
-        question.iloc[4]
-    )
-
-    # ========================================================
-    # QUESTION NUMBER
-    # ========================================================
-
-    st.subheader(
-        f"Question {question_number + 1} "
-        f"of {QUIZ_LENGTH}"
-    )
-
-    # ========================================================
-    # TIMER
-    # ========================================================
-
-    elapsed = (
-        time.time()
-        -
-        st.session_state.question_start_time
-    )
-
-    remaining = max(
-        0,
-        TIME_LIMIT - int(elapsed)
-    )
-
-    st.markdown(
-        f"## ⏱️ {remaining} seconds"
-    )
-
-    # ========================================================
-    # TIMEOUT CHECK
-    # ========================================================
-
-    if elapsed >= TIME_LIMIT:
-
-        if (
-            st.session_state.timeout_recorded_for
-            != question_number
-        ):
-
-            st.session_state.answers.append({
-
-                "question": question_text,
-
-                "answer": "No answer",
-
-                "correct": correct_answer,
-
-                "is_correct": False
-
-            })
-
-            st.session_state.timeout_recorded_for = (
-                question_number
-            )
-
-        st.session_state.show_timeout = True
-
-        st.session_state.timeout_started = (
-            time.time()
-        )
-
-        st.rerun()
-
-    # ========================================================
-    # QUESTION
-    # ========================================================
-
-    st.write("")
-
-    st.markdown(
-        f"### {question_text}"
-    )
-
-    st.write("")
-
-    # ========================================================
-    # SHUFFLE ANSWERS
-    # ========================================================
-
-    if (
-        st.session_state.answers_for_question
-        != question_number
-    ):
-
-        answers = [
-            option_a,
-            option_b,
-            option_c
-        ]
-
-        random.shuffle(
-            answers
-        )
-
-        st.session_state.current_answers = (
-            answers
-        )
-
-        st.session_state.answers_for_question = (
-            question_number
-        )
-
-    answers = (
-        st.session_state.current_answers
-    )
-
-    # ========================================================
-    # ANSWER BUTTONS
-    # ========================================================
-
-    for answer in answers:
-
-        if st.button(
-            answer,
-            use_container_width=True
-        ):
-
-            is_correct = (
-                str(answer)
-                .strip()
-                .lower()
-                ==
-                str(correct_answer)
-                .strip()
-                .lower()
-            )
-
-            st.session_state.answers.append({
-
-                "question": question_text,
-
-                "answer": answer,
-
-                "correct": correct_answer,
-
-                "is_correct": is_correct
-
-            })
-
-            # ------------------------------------------------
-            # NEXT QUESTION
-            # ------------------------------------------------
-
-            st.session_state.current_question += 1
-
-            st.session_state.question_start_time = (
-                time.time()
-            )
-
-            st.session_state.current_answers = None
-
-            st.session_state.answers_for_question = None
-
-            st.session_state.timeout_recorded_for = None
-
-            # ------------------------------------------------
-            # FINISHED?
-            # ------------------------------------------------
-
-            if (
-                st.session_state.current_question
-                >= QUIZ_LENGTH
-            ):
-
-                finish_quiz()
-
-            st.rerun()
-
-    # ========================================================
-    # TIMER REFRESH
-    # ========================================================
-
-    time.sleep(1)
-
-    st.rerun()
+    render_quiz()
 
 
 # ============================================================
@@ -1302,138 +1495,4 @@ elif st.session_state.page == "quiz":
 
 elif st.session_state.page == "results":
 
-    show_header()
-
-    # ========================================================
-    # CALCULATE SCORE
-    # ========================================================
-
-    score = calculate_score()
-
-    st.session_state.score = score
-
-    final_time = (
-        st.session_state.final_time
-    )
-
-    # ========================================================
-    # RESULTS
-    # ========================================================
-
-    st.subheader(
-        "🎉 Quiz complete!"
-    )
-
-    st.markdown(
-        f"## {score} / {QUIZ_LENGTH}"
-    )
-
-    st.write(
-        f"Your total time was "
-        f"**{final_time:.2f} seconds**."
-    )
-
-    # ========================================================
-    # YOUR ANSWERS
-    # ========================================================
-
-    st.divider()
-
-    st.subheader(
-        "📝 Your answers"
-    )
-
-    results_table = []
-
-    for number, answer_data in enumerate(
-        st.session_state.answers,
-        start=1
-    ):
-
-        results_table.append({
-
-            "#": number,
-
-            "Question": answer_data["question"],
-
-            "Your answer": answer_data["answer"],
-
-            "Correct answer": answer_data["correct"],
-
-            "Result": (
-                "✅"
-                if answer_data["is_correct"]
-                else "❌"
-            )
-
-        })
-
-    if results_table:
-
-        results_df = pd.DataFrame(
-            results_table
-        )
-
-        st.dataframe(
-            results_df,
-            hide_index=True,
-            use_container_width=True
-        )
-
-    # ========================================================
-    # SAVE SCORE
-    # ========================================================
-
-    if not st.session_state.result_saved:
-
-        try:
-
-            save_result(
-                nickname=st.session_state.nickname,
-                email=st.session_state.email,
-                newsletter=st.session_state.newsletter,
-                score=score,
-                total_time=final_time
-            )
-
-            st.session_state.result_saved = True
-
-            st.success(
-                "Your score has been added to the "
-                "Mosquito Day leaderboard!"
-            )
-
-        except Exception as e:
-
-            st.error(
-                f"Problem saving your score: {e}"
-            )
-
-    else:
-
-        st.success(
-            "Your score has been added to the "
-            "Mosquito Day leaderboard!"
-        )
-
-    # ========================================================
-    # LEADERBOARD
-    # ========================================================
-
-    st.divider()
-
-    st.subheader(
-        "🏆 Mosquito Day Leaderboard"
-    )
-
-    display_leaderboard()
-
-    # ========================================================
-    # THANK YOU
-    # ========================================================
-
-    st.write("")
-
-    st.info(
-        "Thanks for taking part in the MCID Mosquito Quiz!"
-    )
+    render_results()
