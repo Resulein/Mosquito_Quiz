@@ -31,6 +31,49 @@ LOGO_FILE = "MCID visual.jpg"
 
 
 # ============================================================
+# SESSION STATE INITIALISATION
+# ============================================================
+
+if "app_initialised" not in st.session_state:
+
+    st.session_state.app_initialised = True
+
+    st.session_state.page = "start"
+
+    st.session_state.quiz_questions = None
+
+    st.session_state.current_question = 0
+
+    st.session_state.quiz_start_time = None
+
+    st.session_state.question_start_time = None
+
+    st.session_state.nickname = ""
+
+    st.session_state.email = ""
+
+    st.session_state.newsletter = "Please select"
+
+    st.session_state.answers = []
+
+    st.session_state.score = 0
+
+    st.session_state.final_time = 0
+
+    st.session_state.result_saved = False
+
+    st.session_state.current_answers = None
+
+    st.session_state.answers_for_question = None
+
+    st.session_state.show_timeout = False
+
+    st.session_state.timeout_started = None
+
+    st.session_state.timeout_recorded_for = None
+
+
+# ============================================================
 # GOOGLE SHEETS CONNECTION
 # ============================================================
 
@@ -80,6 +123,7 @@ def read_sheet():
     values = worksheet.get_all_values()
 
     if not values:
+
         return [], []
 
     headers = values[0]
@@ -104,11 +148,18 @@ def read_sheet():
         for i in valid_indexes:
 
             if i < len(row):
-                clean_row.append(row[i])
+
+                clean_row.append(
+                    row[i]
+                )
+
             else:
+
                 clean_row.append("")
 
-        data.append(clean_row)
+        data.append(
+            clean_row
+        )
 
     return clean_headers, data
 
@@ -149,6 +200,7 @@ def get_leaderboard():
     for column in required_columns:
 
         if column not in leaderboard.columns:
+
             leaderboard[column] = ""
 
     leaderboard["Score"] = pd.to_numeric(
@@ -173,9 +225,11 @@ def email_already_used(email):
     headers, data = read_sheet()
 
     if not headers:
+
         return False
 
     if "Email" not in headers:
+
         return False
 
     email_index = headers.index(
@@ -197,6 +251,7 @@ def email_already_used(email):
             )
 
             if existing_email == target_email:
+
                 return True
 
     return False
@@ -251,7 +306,9 @@ def save_result(
 
     all_values = worksheet.get_all_values()
 
-    next_row = len(all_values) + 1
+    next_row = len(
+        all_values
+    ) + 1
 
     new_row = [
         ""
@@ -301,7 +358,9 @@ def save_result(
         "Score"
     )
 
-    if score_index >= len(verification):
+    if score_index >= len(
+        verification
+    ):
 
         raise Exception(
             "The score column could not be verified."
@@ -311,71 +370,14 @@ def save_result(
         verification[score_index]
     ).strip()
 
-    if saved_score != str(int(score)):
+    if saved_score != str(
+        int(score)
+    ):
 
         raise Exception(
             "The score was written but could not "
             "be verified."
         )
-
-
-# ============================================================
-# SESSION STATE
-# ============================================================
-
-if "page" not in st.session_state:
-    st.session_state.page = "start"
-
-if "quiz_questions" not in st.session_state:
-    st.session_state.quiz_questions = None
-
-if "current_question" not in st.session_state:
-    st.session_state.current_question = 0
-
-if "quiz_start_time" not in st.session_state:
-    st.session_state.quiz_start_time = None
-
-if "question_start_time" not in st.session_state:
-    st.session_state.question_start_time = None
-
-if "nickname" not in st.session_state:
-    st.session_state.nickname = ""
-
-if "email" not in st.session_state:
-    st.session_state.email = ""
-
-if "newsletter" not in st.session_state:
-    st.session_state.newsletter = "Please select"
-
-if "answers" not in st.session_state:
-    st.session_state.answers = []
-
-if "score" not in st.session_state:
-    st.session_state.score = 0
-
-if "final_time" not in st.session_state:
-    st.session_state.final_time = 0
-
-if "result_saved" not in st.session_state:
-    st.session_state.result_saved = False
-
-if "current_answers" not in st.session_state:
-    st.session_state.current_answers = None
-
-if "answers_for_question" not in st.session_state:
-    st.session_state.answers_for_question = None
-
-if "show_timeout" not in st.session_state:
-    st.session_state.show_timeout = False
-
-if "timeout_started" not in st.session_state:
-    st.session_state.timeout_started = None
-
-if "timeout_recorded_for" not in st.session_state:
-    st.session_state.timeout_recorded_for = None
-
-if "start_error" not in st.session_state:
-    st.session_state.start_error = ""
 
 
 # ============================================================
@@ -410,7 +412,100 @@ def show_header():
 
 
 # ============================================================
-# TOP 3 LEADERBOARD
+# DISPLAY FULL LEADERBOARD
+# ============================================================
+
+def display_leaderboard():
+
+    try:
+
+        leaderboard = get_leaderboard()
+
+    except Exception as e:
+
+        st.error(
+            "Unable to load the Mosquito Week Leaderboard: "
+            f"{e}"
+        )
+
+        return
+
+    if leaderboard.empty:
+
+        st.write(
+            "No scores yet. Be the first to play!"
+        )
+
+        return
+
+    leaderboard["Score"] = pd.to_numeric(
+        leaderboard["Score"],
+        errors="coerce"
+    )
+
+    leaderboard["Total Time"] = pd.to_numeric(
+        leaderboard["Total Time"],
+        errors="coerce"
+    )
+
+    leaderboard = leaderboard.dropna(
+        subset=["Score"]
+    )
+
+    if leaderboard.empty:
+
+        st.write(
+            "No scores yet. Be the first to play!"
+        )
+
+        return
+
+    leaderboard = leaderboard.sort_values(
+        by=[
+            "Score",
+            "Total Time"
+        ],
+        ascending=[
+            False,
+            True
+        ]
+    ).reset_index(
+        drop=True
+    )
+
+    leaderboard.insert(
+        0,
+        "Rank",
+        range(
+            1,
+            len(leaderboard) + 1
+        )
+    )
+
+    public_board = leaderboard[
+        [
+            "Rank",
+            "Nickname",
+            "Score",
+            "Total Time"
+        ]
+    ].copy()
+
+    public_board = public_board.rename(
+        columns={
+            "Total Time": "Time (sec)"
+        }
+    )
+
+    st.dataframe(
+        public_board,
+        hide_index=True,
+        use_container_width=True
+    )
+
+
+# ============================================================
+# DISPLAY TOP 3
 # ============================================================
 
 def display_top3_leaderboard():
@@ -507,99 +602,6 @@ def display_top3_leaderboard():
 
 
 # ============================================================
-# FULL LEADERBOARD
-# ============================================================
-
-def display_leaderboard():
-
-    try:
-
-        leaderboard = get_leaderboard()
-
-    except Exception as e:
-
-        st.error(
-            "Unable to load the Mosquito Week Leaderboard: "
-            f"{e}"
-        )
-
-        return
-
-    if leaderboard.empty:
-
-        st.write(
-            "No scores yet. Be the first to play!"
-        )
-
-        return
-
-    leaderboard["Score"] = pd.to_numeric(
-        leaderboard["Score"],
-        errors="coerce"
-    )
-
-    leaderboard["Total Time"] = pd.to_numeric(
-        leaderboard["Total Time"],
-        errors="coerce"
-    )
-
-    leaderboard = leaderboard.dropna(
-        subset=["Score"]
-    )
-
-    if leaderboard.empty:
-
-        st.write(
-            "No scores yet. Be the first to play!"
-        )
-
-        return
-
-    leaderboard = leaderboard.sort_values(
-        by=[
-            "Score",
-            "Total Time"
-        ],
-        ascending=[
-            False,
-            True
-        ]
-    ).reset_index(
-        drop=True
-    )
-
-    leaderboard.insert(
-        0,
-        "Rank",
-        range(
-            1,
-            len(leaderboard) + 1
-        )
-    )
-
-    public_board = leaderboard[
-        [
-            "Rank",
-            "Nickname",
-            "Score",
-            "Total Time"
-        ]
-    ].copy()
-
-    public_board = public_board.rename(
-        columns={
-            "Total Time": "Time (sec)"
-        }
-    )
-
-    st.dataframe(
-        public_board,
-        hide_index=True,
-        use_container_width=True
-    )
-
-
-# ============================================================
 # CALCULATE SCORE
 # ============================================================
 
@@ -629,6 +631,78 @@ def finish_quiz():
     )
 
     st.session_state.page = "results"
+
+
+# ============================================================
+# START QUIZ
+# ============================================================
+
+def start_quiz():
+
+    questions = load_questions()
+
+    questions = questions.dropna(
+        how="all"
+    )
+
+    if len(questions) < QUIZ_LENGTH:
+
+        st.error(
+            f"The question bank contains only "
+            f"{len(questions)} questions. "
+            f"You need at least {QUIZ_LENGTH} questions."
+        )
+
+        return False
+
+    selected_questions = questions.sample(
+        n=QUIZ_LENGTH,
+        replace=False
+    ).reset_index(
+        drop=True
+    )
+
+    st.session_state.quiz_questions = (
+        selected_questions
+    )
+
+    st.session_state.current_question = 0
+
+    st.session_state.answers = []
+
+    st.session_state.score = 0
+
+    st.session_state.final_time = 0
+
+    st.session_state.result_saved = False
+
+    st.session_state.current_answers = None
+
+    st.session_state.answers_for_question = None
+
+    st.session_state.show_timeout = False
+
+    st.session_state.timeout_started = None
+
+    st.session_state.timeout_recorded_for = None
+
+    now = time.time()
+
+    st.session_state.quiz_start_time = now
+
+    st.session_state.question_start_time = now
+
+    # ========================================================
+    # IMPORTANT:
+    #
+    # We do NOT attempt to clear the old page.
+    #
+    # We simply change the application state.
+    # ========================================================
+
+    st.session_state.page = "quiz_blank"
+
+    return True
 
 
 # ============================================================
@@ -665,10 +739,6 @@ if st.session_state.page == "start":
 
     st.divider()
 
-    # --------------------------------------------------------
-    # PLAYER DETAILS
-    # --------------------------------------------------------
-
     nickname = st.text_input(
         "Nickname",
         value=st.session_state.nickname,
@@ -687,12 +757,15 @@ if st.session_state.page == "start":
             "Please select",
             "Yes",
             "No"
-        ]
+        ],
+        index=(
+            0
+            if st.session_state.newsletter == "Please select"
+            else ["Please select", "Yes", "No"].index(
+                st.session_state.newsletter
+            )
+        )
     )
-
-    # --------------------------------------------------------
-    # MCID WEBPAGE
-    # --------------------------------------------------------
 
     st.markdown(
         'To find out more about the MCID, please check out our '
@@ -701,29 +774,11 @@ if st.session_state.page == "start":
 
     st.write("")
 
-    # --------------------------------------------------------
-    # ERROR MESSAGE
-    # --------------------------------------------------------
-
-    if st.session_state.start_error:
-
-        st.error(
-            st.session_state.start_error
-        )
-
-    # --------------------------------------------------------
-    # START BUTTON
-    # --------------------------------------------------------
-
     start_clicked = st.button(
         "START QUIZ",
         type="primary",
         use_container_width=True
     )
-
-    # --------------------------------------------------------
-    # TOP 3
-    # --------------------------------------------------------
 
     st.write("")
 
@@ -733,134 +788,60 @@ if st.session_state.page == "start":
 
     display_top3_leaderboard()
 
-    # --------------------------------------------------------
-    # START QUIZ
-    # --------------------------------------------------------
-
     if start_clicked:
-
-        # Clear any previous error
-
-        st.session_state.start_error = ""
-
-        # ----------------------------------------------------
-        # VALIDATE NICKNAME
-        # ----------------------------------------------------
 
         if not nickname.strip():
 
-            st.session_state.start_error = (
+            st.error(
                 "Please enter a nickname."
             )
 
-            st.rerun()
-
-        # ----------------------------------------------------
-        # VALIDATE EMAIL
-        # ----------------------------------------------------
+            st.stop()
 
         if not email.strip():
 
-            st.session_state.start_error = (
+            st.error(
                 "Please enter your email address."
             )
 
-            st.rerun()
+            st.stop()
 
         if "@" not in email or "." not in email:
 
-            st.session_state.start_error = (
+            st.error(
                 "Please enter a valid email address."
             )
 
-            st.rerun()
-
-        # ----------------------------------------------------
-        # VALIDATE NEWSLETTER
-        # ----------------------------------------------------
+            st.stop()
 
         if newsletter == "Please select":
 
-            st.session_state.start_error = (
+            st.error(
                 "Please select whether you would like "
                 "to receive the MCID's newsletter."
             )
 
-            st.rerun()
-
-        # ----------------------------------------------------
-        # CHECK EMAIL
-        # ----------------------------------------------------
+            st.stop()
 
         try:
 
             if email_already_used(email):
 
-                st.session_state.start_error = (
+                st.error(
                     "This email address has already been used "
-                    "to play the quiz. Each player can only "
-                    "play once."
+                    "to play the quiz. Each player can only play once."
                 )
 
-                st.rerun()
+                st.stop()
 
         except Exception as e:
 
-            st.session_state.start_error = (
+            st.error(
                 "Unable to check the Mosquito Week "
                 f"Leaderboard: {e}"
             )
 
-            st.rerun()
-
-        # ----------------------------------------------------
-        # LOAD QUESTIONS
-        # ----------------------------------------------------
-
-        try:
-
-            questions = load_questions()
-
-        except Exception as e:
-
-            st.session_state.start_error = (
-                f"Unable to load the questions: {e}"
-            )
-
-            st.rerun()
-
-        questions = questions.dropna(
-            how="all"
-        )
-
-        if len(questions) < QUIZ_LENGTH:
-
-            st.session_state.start_error = (
-                f"The question bank contains only "
-                f"{len(questions)} questions. "
-                f"You need at least {QUIZ_LENGTH} questions."
-            )
-
-            st.rerun()
-
-        # ----------------------------------------------------
-        # SELECT QUESTIONS
-        # ----------------------------------------------------
-
-        selected_questions = questions.sample(
-            n=QUIZ_LENGTH,
-            replace=False
-        ).reset_index(
-            drop=True
-        )
-
-        st.session_state.quiz_questions = (
-            selected_questions
-        )
-
-        # ----------------------------------------------------
-        # SAVE PLAYER INFORMATION
-        # ----------------------------------------------------
+            st.stop()
 
         st.session_state.nickname = (
             nickname.strip()
@@ -874,52 +855,37 @@ if st.session_state.page == "start":
             newsletter
         )
 
-        # ----------------------------------------------------
-        # RESET QUIZ
-        # ----------------------------------------------------
+        if start_quiz():
 
-        st.session_state.current_question = 0
+            st.rerun()
 
-        st.session_state.answers = []
 
-        st.session_state.score = 0
+# ============================================================
+# BLANK QUIZ TRANSITION
+# ============================================================
 
-        st.session_state.final_time = 0
+elif st.session_state.page == "quiz_blank":
 
-        st.session_state.result_saved = False
+    # ========================================================
+    # THIS PAGE IS INTENTIONALLY COMPLETELY BLANK.
+    #
+    # Crucially, none of the start-page code is executed here.
+    #
+    # The next rerun moves from:
+    #
+    #     quiz_blank
+    #
+    # to:
+    #
+    #     quiz
+    #
+    # This gives Streamlit a completely separate render pass
+    # between the start page and the quiz.
+    # ========================================================
 
-        st.session_state.current_answers = None
+    st.session_state.page = "quiz"
 
-        st.session_state.answers_for_question = None
-
-        st.session_state.show_timeout = False
-
-        st.session_state.timeout_started = None
-
-        st.session_state.timeout_recorded_for = None
-
-        # ----------------------------------------------------
-        # START TIMERS
-        # ----------------------------------------------------
-
-        now = time.time()
-
-        st.session_state.quiz_start_time = now
-
-        st.session_state.question_start_time = now
-
-        # ----------------------------------------------------
-        # CHANGE PAGE
-        #
-        # THIS IS THE IMPORTANT PART.
-        #
-        # We go directly from start to quiz.
-        # There is no page container and no blank page.
-        # ----------------------------------------------------
-
-        st.session_state.page = "quiz"
-
-        st.rerun()
+    st.rerun()
 
 
 # ============================================================
@@ -930,17 +896,17 @@ elif st.session_state.page == "quiz":
 
     show_header()
 
-    # --------------------------------------------------------
-    # GET QUESTIONS
-    # --------------------------------------------------------
-
     questions = (
         st.session_state.quiz_questions
     )
 
-    # --------------------------------------------------------
+    question_number = (
+        st.session_state.current_question
+    )
+
+    # ========================================================
     # SAFETY CHECK
-    # --------------------------------------------------------
+    # ========================================================
 
     if questions is None:
 
@@ -948,13 +914,9 @@ elif st.session_state.page == "quiz":
 
         st.rerun()
 
-    question_number = (
-        st.session_state.current_question
-    )
-
-    # --------------------------------------------------------
-    # CHECK WHETHER QUIZ IS COMPLETE
-    # --------------------------------------------------------
+    # ========================================================
+    # CHECK COMPLETE
+    # ========================================================
 
     if question_number >= QUIZ_LENGTH:
 
@@ -962,9 +924,9 @@ elif st.session_state.page == "quiz":
 
         st.rerun()
 
-    # --------------------------------------------------------
+    # ========================================================
     # TIMEOUT SCREEN
-    # --------------------------------------------------------
+    # ========================================================
 
     if st.session_state.show_timeout:
 
@@ -1013,13 +975,15 @@ elif st.session_state.page == "quiz":
 
         else:
 
-            time.sleep(0.1)
+            time.sleep(
+                0.1
+            )
 
             st.rerun()
 
-    # --------------------------------------------------------
-    # GET CURRENT QUESTION
-    # --------------------------------------------------------
+    # ========================================================
+    # CURRENT QUESTION
+    # ========================================================
 
     question = questions.iloc[
         question_number
@@ -1045,18 +1009,18 @@ elif st.session_state.page == "quiz":
         question.iloc[4]
     )
 
-    # --------------------------------------------------------
+    # ========================================================
     # QUESTION NUMBER
-    # --------------------------------------------------------
+    # ========================================================
 
     st.subheader(
         f"Question {question_number + 1} "
         f"of {QUIZ_LENGTH}"
     )
 
-    # --------------------------------------------------------
+    # ========================================================
     # TIMER
-    # --------------------------------------------------------
+    # ========================================================
 
     elapsed = (
         time.time()
@@ -1073,9 +1037,9 @@ elif st.session_state.page == "quiz":
         f"## ⏱️ {remaining} seconds"
     )
 
-    # --------------------------------------------------------
+    # ========================================================
     # TIMEOUT CHECK
-    # --------------------------------------------------------
+    # ========================================================
 
     if elapsed >= TIME_LIMIT:
 
@@ -1108,9 +1072,9 @@ elif st.session_state.page == "quiz":
 
         st.rerun()
 
-    # --------------------------------------------------------
-    # QUESTION TEXT
-    # --------------------------------------------------------
+    # ========================================================
+    # QUESTION
+    # ========================================================
 
     st.write("")
 
@@ -1120,9 +1084,9 @@ elif st.session_state.page == "quiz":
 
     st.write("")
 
-    # --------------------------------------------------------
-    # SHUFFLE ANSWERS ONCE
-    # --------------------------------------------------------
+    # ========================================================
+    # SHUFFLE ANSWERS
+    # ========================================================
 
     if (
         st.session_state.answers_for_question
@@ -1151,18 +1115,15 @@ elif st.session_state.page == "quiz":
         st.session_state.current_answers
     )
 
-    # --------------------------------------------------------
+    # ========================================================
     # ANSWER BUTTONS
-    # --------------------------------------------------------
+    # ========================================================
 
-    for answer_index, answer in enumerate(
-        answers
-    ):
+    for answer in answers:
 
         if st.button(
             answer,
-            use_container_width=True,
-            key=f"question_{question_number}_answer_{answer_index}"
+            use_container_width=True
         ):
 
             is_correct = (
@@ -1187,10 +1148,6 @@ elif st.session_state.page == "quiz":
 
             })
 
-            # ------------------------------------------------
-            # MOVE TO NEXT QUESTION
-            # ------------------------------------------------
-
             st.session_state.current_question += 1
 
             st.session_state.question_start_time = (
@@ -1203,10 +1160,6 @@ elif st.session_state.page == "quiz":
 
             st.session_state.timeout_recorded_for = None
 
-            # ------------------------------------------------
-            # FINISHED?
-            # ------------------------------------------------
-
             if (
                 st.session_state.current_question
                 >= QUIZ_LENGTH
@@ -1216,11 +1169,13 @@ elif st.session_state.page == "quiz":
 
             st.rerun()
 
-    # --------------------------------------------------------
-    # REFRESH COUNTDOWN
-    # --------------------------------------------------------
+    # ========================================================
+    # TIMER REFRESH
+    # ========================================================
 
-    time.sleep(1)
+    time.sleep(
+        1
+    )
 
     st.rerun()
 
@@ -1233,9 +1188,9 @@ elif st.session_state.page == "results":
 
     show_header()
 
-    # --------------------------------------------------------
-    # SCORE
-    # --------------------------------------------------------
+    # ========================================================
+    # CALCULATE SCORE
+    # ========================================================
 
     score = calculate_score()
 
@@ -1245,9 +1200,9 @@ elif st.session_state.page == "results":
         st.session_state.final_time
     )
 
-    # --------------------------------------------------------
+    # ========================================================
     # RESULTS
-    # --------------------------------------------------------
+    # ========================================================
 
     st.subheader(
         "🎉 Quiz complete!"
@@ -1262,9 +1217,9 @@ elif st.session_state.page == "results":
         f"**{final_time:.2f} seconds**."
     )
 
-    # --------------------------------------------------------
+    # ========================================================
     # YOUR ANSWERS
-    # --------------------------------------------------------
+    # ========================================================
 
     st.divider()
 
@@ -1309,9 +1264,9 @@ elif st.session_state.page == "results":
             use_container_width=True
         )
 
-    # --------------------------------------------------------
+    # ========================================================
     # SAVE SCORE
-    # --------------------------------------------------------
+    # ========================================================
 
     if not st.session_state.result_saved:
 
@@ -1345,9 +1300,9 @@ elif st.session_state.page == "results":
             "Mosquito Day leaderboard!"
         )
 
-    # --------------------------------------------------------
-    # FULL LEADERBOARD
-    # --------------------------------------------------------
+    # ========================================================
+    # LEADERBOARD
+    # ========================================================
 
     st.divider()
 
@@ -1357,9 +1312,9 @@ elif st.session_state.page == "results":
 
     display_leaderboard()
 
-    # --------------------------------------------------------
+    # ========================================================
     # THANK YOU
-    # --------------------------------------------------------
+    # ========================================================
 
     st.write("")
 
