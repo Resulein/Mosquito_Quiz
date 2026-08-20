@@ -365,9 +365,8 @@ for key, value in defaults.items():
 # ============================================================
 # MAIN PAGE CONTAINER
 #
-# IMPORTANT:
-# EVERYTHING on every page is rendered inside this container.
-# This allows the entire start page to be removed when the
+# Everything on every page is rendered inside this container.
+# This allows the complete start page to disappear when the
 # quiz begins.
 # ============================================================
 
@@ -694,10 +693,19 @@ if st.session_state.page == "start":
             ]
         )
 
+        # ====================================================
+        # MCID WEBPAGE
+        # ====================================================
+
+        st.markdown(
+            'To find out more about the MCID, please check out our '
+            '[webpage](https://mcid.unibe.ch).'
+        )
+
         st.write("")
 
         # ====================================================
-        # TOP 3
+        # TOP 3 LEADERBOARD
         # ====================================================
 
         st.subheader(
@@ -884,26 +892,24 @@ if st.session_state.page == "start":
 
             st.session_state.page = "quiz"
 
-            # =================================================
-            # CRITICAL FIX
+            # ------------------------------------------------
+            # CRITICAL PAGE CLEAR
+            # ------------------------------------------------
             #
-            # Remove the ENTIRE start-page container.
+            # This removes the entire start page, including:
             #
-            # This removes:
-            # - Header
-            # - Introduction
-            # - Player details
+            # - MCID header
+            # - introduction
+            # - player details
+            # - SPREAD question
+            # - MCID webpage link
             # - Top 3 leaderboard
-            # - Start Quiz button
+            # - START QUIZ button
             #
-            # before the rerun.
-            # =================================================
+            # before the quiz page is rendered.
+            # ------------------------------------------------
 
             page_container.empty()
-
-            # ------------------------------------------------
-            # RERUN
-            # ------------------------------------------------
 
             st.rerun()
 
