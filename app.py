@@ -1322,7 +1322,7 @@ elif st.session_state.page == "results":
 
                 st.success(
                     "Your score has been added to the "
-                    "Mosquito Week leaderboard!"
+                    "Mosquito Day leaderboard!"
                 )
 
             except Exception as e:
@@ -1335,17 +1335,17 @@ elif st.session_state.page == "results":
 
             st.success(
                 "Your score has been added to the "
-                "Mosquito Week leaderboard!"
+                "Mosquito Day leaderboard!"
             )
 
         # ====================================================
-        # MOSQUITO WEEK LEADERBOARD
+        # MOSQUITO DAY LEADERBOARD
         # ====================================================
 
         st.divider()
 
         st.subheader(
-            "🏆 Mosquito Week Leaderboard"
+            "🏆 Mosquito Day Leaderboard"
         )
 
         display_leaderboard()
