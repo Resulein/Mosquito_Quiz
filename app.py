@@ -726,7 +726,7 @@ if st.session_state.page == "start":
         display_top3_leaderboard()
 
         
-        )
+        
 
         # ====================================================
         # START QUIZ
