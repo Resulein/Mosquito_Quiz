@@ -78,7 +78,6 @@ def read_sheet():
     values = worksheet.get_all_values()
 
     if not values:
-
         return [], []
 
     headers = values[0]
@@ -103,11 +102,8 @@ def read_sheet():
         for i in valid_indexes:
 
             if i < len(row):
-
                 clean_row.append(row[i])
-
             else:
-
                 clean_row.append("")
 
         data.append(clean_row)
@@ -151,7 +147,6 @@ def get_leaderboard():
     for column in required_columns:
 
         if column not in leaderboard.columns:
-
             leaderboard[column] = ""
 
     leaderboard["Score"] = pd.to_numeric(
@@ -176,18 +171,14 @@ def email_already_used(email):
     headers, data = read_sheet()
 
     if not headers:
-
         return False
 
     if "Email" not in headers:
-
         return False
 
     email_index = headers.index("Email")
 
-    target_email = (
-        email.strip().lower()
-    )
+    target_email = email.strip().lower()
 
     for row in data:
 
@@ -200,7 +191,6 @@ def email_already_used(email):
             )
 
             if existing_email == target_email:
-
                 return True
 
     return False
@@ -313,9 +303,7 @@ def save_result(
         verification[score_index]
     ).strip()
 
-    if saved_score != str(
-        int(score)
-    ):
+    if saved_score != str(int(score)):
 
         raise Exception(
             "The score was written but could not "
@@ -329,14 +317,26 @@ def save_result(
 
 defaults = {
 
-    # Possible pages:
+    # --------------------------------------------------------
+    # PAGE STATES:
     #
     # start
-    # quiz_blank
+    # countdown
     # quiz
     # results
-    #
+    # --------------------------------------------------------
+
     "page": "start",
+
+    # --------------------------------------------------------
+    # COUNTDOWN
+    # --------------------------------------------------------
+
+    "countdown": 5,
+
+    # --------------------------------------------------------
+    # QUIZ
+    # --------------------------------------------------------
 
     "quiz_questions": None,
 
@@ -346,11 +346,19 @@ defaults = {
 
     "question_start_time": None,
 
+    # --------------------------------------------------------
+    # PLAYER
+    # --------------------------------------------------------
+
     "nickname": "",
 
     "email": "",
 
     "newsletter": "Please select",
+
+    # --------------------------------------------------------
+    # ANSWERS
+    # --------------------------------------------------------
 
     "answers": [],
 
@@ -360,9 +368,17 @@ defaults = {
 
     "result_saved": False,
 
+    # --------------------------------------------------------
+    # ANSWER SHUFFLING
+    # --------------------------------------------------------
+
     "current_answers": None,
 
     "answers_for_question": None,
+
+    # --------------------------------------------------------
+    # TIMEOUT
+    # --------------------------------------------------------
 
     "show_timeout": False,
 
@@ -730,10 +746,8 @@ if st.session_state.page == "start":
 
     display_top3_leaderboard()
 
-    st.write("")
-
     # ========================================================
-    # START QUIZ
+    # START BUTTON ACTION
     # ========================================================
 
     if start_clicked:
@@ -843,7 +857,7 @@ if st.session_state.page == "start":
         )
 
         # ----------------------------------------------------
-        # PLAYER INFORMATION
+        # SAVE PLAYER INFORMATION
         # ----------------------------------------------------
 
         st.session_state.nickname = (
@@ -883,7 +897,88 @@ if st.session_state.page == "start":
         st.session_state.timeout_recorded_for = None
 
         # ----------------------------------------------------
-        # START TIMERS
+        # SET COUNTDOWN
+        # ----------------------------------------------------
+
+        st.session_state.countdown = 5
+
+        # ----------------------------------------------------
+        # IMPORTANT
+        #
+        # We do NOT go directly to the quiz.
+        #
+        # We first go to a completely different page state.
+        # ----------------------------------------------------
+
+        st.session_state.page = "countdown"
+
+        # ----------------------------------------------------
+        # RERUN
+        # ----------------------------------------------------
+
+        st.rerun()
+
+
+# ============================================================
+# COUNTDOWN PAGE
+# ============================================================
+
+elif st.session_state.page == "countdown":
+
+    # ========================================================
+    # THIS IS A COMPLETELY SEPARATE PAGE STATE
+    #
+    # Nothing from the start page is rendered here.
+    # ========================================================
+
+    st.write("")
+
+    st.write("")
+
+    st.markdown(
+        "<div style='text-align:center;'>"
+        "<h2>Your personal quiz will start shortly</h2>"
+        "</div>",
+        unsafe_allow_html=True
+    )
+
+    st.write("")
+
+    countdown_value = (
+        st.session_state.countdown
+    )
+
+    st.markdown(
+        f"""
+        <div style="
+            text-align:center;
+            font-size:80px;
+            font-weight:bold;
+            margin-top:30px;
+            margin-bottom:30px;
+        ">
+            {countdown_value}
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    # ========================================================
+    # COUNTDOWN
+    # ========================================================
+
+    if countdown_value > 0:
+
+        time.sleep(1)
+
+        st.session_state.countdown -= 1
+
+        st.rerun()
+
+    else:
+
+        # ----------------------------------------------------
+        # COUNTDOWN HAS REACHED ZERO
         # ----------------------------------------------------
 
         now = time.time()
@@ -892,59 +987,11 @@ if st.session_state.page == "start":
 
         st.session_state.question_start_time = now
 
-        # ----------------------------------------------------
-        # IMPORTANT:
-        #
-        # DO NOT GO DIRECTLY TO THE QUIZ.
-        #
-        # First go to a completely blank page.
-        # ----------------------------------------------------
+        st.session_state.current_question = 0
 
-        st.session_state.page = "quiz_blank"
+        st.session_state.page = "quiz"
 
         st.rerun()
-
-
-# ============================================================
-# BLANK TRANSITION PAGE
-# ============================================================
-#
-# THIS IS THE IMPORTANT NEW PART.
-#
-# When START QUIZ is clicked:
-#
-#       START PAGE
-#            ↓
-#       quiz_blank
-#            ↓
-#          quiz
-#
-# The quiz_blank page renders NOTHING.
-#
-# This gives Streamlit a completely separate run in which
-# none of the start-page widgets are rendered.
-# ============================================================
-
-elif st.session_state.page == "quiz_blank":
-
-    # --------------------------------------------------------
-    # DO NOT RENDER:
-    #
-    # - header
-    # - leaderboard
-    # - start button
-    # - player details
-    # - introduction
-    # - anything else
-    #
-    # The page is deliberately completely empty.
-    # --------------------------------------------------------
-
-    # Change to the actual quiz page for the NEXT run.
-
-    st.session_state.page = "quiz"
-
-    st.rerun()
 
 
 # ============================================================
@@ -952,6 +999,12 @@ elif st.session_state.page == "quiz_blank":
 # ============================================================
 
 elif st.session_state.page == "quiz":
+
+    # ========================================================
+    # QUIZ PAGE ONLY
+    #
+    # There is deliberately NO start-page content here.
+    # ========================================================
 
     show_header()
 
@@ -1364,7 +1417,7 @@ elif st.session_state.page == "results":
         )
 
     # ========================================================
-    # MOSQUITO DAY LEADERBOARD
+    # LEADERBOARD
     # ========================================================
 
     st.divider()
