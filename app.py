@@ -23,6 +23,7 @@ st.set_page_config(
 
 QUIZ_LENGTH = 15
 TIME_LIMIT = 20
+COUNTDOWN_LENGTH = 5
 
 GOOGLE_SHEET_NAME = "Mosquito Week Leaderboard"
 
@@ -64,9 +65,7 @@ def connect_to_google_sheet():
 @st.cache_data
 def load_questions():
 
-    return pd.read_csv(
-        QUESTIONS_FILE
-    )
+    return pd.read_csv(QUESTIONS_FILE)
 
 
 # ============================================================
@@ -114,9 +113,7 @@ def read_sheet():
 
                 clean_row.append("")
 
-        data.append(
-            clean_row
-        )
+        data.append(clean_row)
 
     return clean_headers, data
 
@@ -343,8 +340,6 @@ def save_result(
 
 defaults = {
 
-    # IMPORTANT:
-    # The app now has four completely separate states.
     "page": "start",
 
     "quiz_questions": None,
@@ -379,7 +374,7 @@ defaults = {
 
     "timeout_recorded_for": None,
 
-    "countdown": 5
+    "countdown_start": None
 }
 
 
@@ -647,7 +642,7 @@ def finish_quiz():
 # START PAGE
 # ============================================================
 
-def render_start_page():
+if st.session_state.page == "start":
 
     show_header()
 
@@ -707,8 +702,7 @@ def render_start_page():
             "Please select",
             "Yes",
             "No"
-        ],
-        key="newsletter_select"
+        ]
     )
 
     # ========================================================
@@ -744,6 +738,8 @@ def render_start_page():
 
     display_top3_leaderboard()
 
+    st.write("")
+
     # ========================================================
     # START QUIZ
     # ========================================================
@@ -760,7 +756,7 @@ def render_start_page():
                 "Please enter a nickname."
             )
 
-            return
+            st.stop()
 
         # ----------------------------------------------------
         # VALIDATE EMAIL
@@ -772,7 +768,7 @@ def render_start_page():
                 "Please enter your email address."
             )
 
-            return
+            st.stop()
 
         if "@" not in email or "." not in email:
 
@@ -780,7 +776,7 @@ def render_start_page():
                 "Please enter a valid email address."
             )
 
-            return
+            st.stop()
 
         # ----------------------------------------------------
         # VALIDATE NEWSLETTER
@@ -793,7 +789,7 @@ def render_start_page():
                 "to receive the MCID's newsletter."
             )
 
-            return
+            st.stop()
 
         # ----------------------------------------------------
         # CHECK EMAIL
@@ -808,7 +804,7 @@ def render_start_page():
                     "to play the quiz. Each player can only play once."
                 )
 
-                return
+                st.stop()
 
         except Exception as e:
 
@@ -817,7 +813,7 @@ def render_start_page():
                 f"Leaderboard: {e}"
             )
 
-            return
+            st.stop()
 
         # ----------------------------------------------------
         # LOAD QUESTIONS
@@ -837,7 +833,7 @@ def render_start_page():
                 f"You need at least {QUIZ_LENGTH} questions."
             )
 
-            return
+            st.stop()
 
         # ----------------------------------------------------
         # SELECT QUESTIONS
@@ -895,30 +891,16 @@ def render_start_page():
         st.session_state.timeout_recorded_for = None
 
         # ----------------------------------------------------
-        # SET TIMER
+        # START COUNTDOWN
         # ----------------------------------------------------
 
-        now = time.time()
-
-        st.session_state.quiz_start_time = now
-
-        st.session_state.question_start_time = now
-
-        # ----------------------------------------------------
-        # THIS IS THE IMPORTANT PART
-        #
-        # We do NOT try to clear the Start page.
-        #
-        # We simply tell Streamlit:
-        #
-        # "On the next run, render the COUNTDOWN page."
-        #
-        # The Start page will not be rendered at all.
-        # ----------------------------------------------------
-
-        st.session_state.countdown = 5
+        st.session_state.countdown_start = time.time()
 
         st.session_state.page = "countdown"
+
+        # ----------------------------------------------------
+        # IMMEDIATELY RERUN
+        # ----------------------------------------------------
 
         st.rerun()
 
@@ -927,67 +909,103 @@ def render_start_page():
 # COUNTDOWN PAGE
 # ============================================================
 
-def render_countdown_page():
+elif st.session_state.page == "countdown":
 
-    # --------------------------------------------------------
-    # ONLY THIS PAGE IS RENDERED.
+    # ========================================================
+    # IMPORTANT:
     #
-    # There is no Start page underneath it because the Start
-    # page function is not called during this run.
-    # --------------------------------------------------------
+    # NOTHING FROM THE START PAGE IS RENDERED HERE.
+    #
+    # There is deliberately no:
+    #
+    # show_header()
+    # leaderboard
+    # start button
+    # player information
+    #
+    # This is a completely separate page state.
+    # ========================================================
 
-    st.write("")
+    elapsed = (
+        time.time()
+        -
+        st.session_state.countdown_start
+    )
 
-    st.write("")
+    countdown = max(
+        0,
+        COUNTDOWN_LENGTH - int(elapsed)
+    )
 
-    st.write("")
+    # ========================================================
+    # RED RECTANGLE / YELLOW BACKGROUND
+    # ========================================================
 
     st.markdown(
-        """
-        <div style="text-align:center;">
-            <h2>Your personal quiz will start shortly</h2>
+        f"""
+        <div style="
+            background-color: yellow;
+            border: 6px solid red;
+            padding: 35px 20px;
+            text-align: center;
+            border-radius: 12px;
+            margin-top: 100px;
+            margin-bottom: 100px;
+        ">
+
+            <div style="
+                color: red;
+                font-size: 30px;
+                font-weight: bold;
+                line-height: 1.3;
+            ">
+                YOUR PERSONAL QUIZ<br>
+                WILL START SHORTLY
+            </div>
+
+            <div style="
+                color: red;
+                font-size: 80px;
+                font-weight: bold;
+                line-height: 1;
+                margin-top: 25px;
+            ">
+                {countdown}
+            </div>
+
         </div>
         """,
         unsafe_allow_html=True
     )
 
-    st.write("")
+    # ========================================================
+    # FINISH COUNTDOWN
+    # ========================================================
 
-    countdown_placeholder = st.empty()
+    if elapsed >= COUNTDOWN_LENGTH:
 
-    for number in range(
-        5,
-        -1,
-        -1
-    ):
+        now = time.time()
 
-        countdown_placeholder.markdown(
-            f"""
-            <div style="text-align:center;">
-                <h1 style="font-size:80px;">
-                    {number}
-                </h1>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+        st.session_state.quiz_start_time = now
 
-        time.sleep(1)
+        st.session_state.question_start_time = now
 
-    # --------------------------------------------------------
-    # COUNTDOWN FINISHED
-    # --------------------------------------------------------
+        st.session_state.page = "quiz"
 
-    st.session_state.page = "quiz"
+        st.rerun()
 
-    st.rerun()
+    else:
+
+        time.sleep(0.1)
+
+        st.rerun()
 
 
 # ============================================================
 # QUIZ PAGE
 # ============================================================
 
-def render_quiz_page():
+elif st.session_state.page == "quiz":
 
     show_header()
 
@@ -1283,7 +1301,7 @@ def render_quiz_page():
 # RESULTS PAGE
 # ============================================================
 
-def render_results_page():
+elif st.session_state.page == "results":
 
     show_header()
 
@@ -1420,34 +1438,3 @@ def render_results_page():
     st.info(
         "Thanks for taking part in the MCID Mosquito Quiz!"
     )
-
-
-# ============================================================
-# MAIN APP ROUTER
-#
-# THIS IS THE CRITICAL CHANGE.
-#
-# Only ONE of these functions is called on each Streamlit
-# execution.
-#
-# Therefore the Start page cannot remain underneath the quiz.
-# ============================================================
-
-if st.session_state.page == "start":
-
-    render_start_page()
-
-
-elif st.session_state.page == "countdown":
-
-    render_countdown_page()
-
-
-elif st.session_state.page == "quiz":
-
-    render_quiz_page()
-
-
-elif st.session_state.page == "results":
-
-    render_results_page()
