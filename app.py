@@ -64,7 +64,9 @@ def connect_to_google_sheet():
 @st.cache_data
 def load_questions():
 
-    return pd.read_csv(QUESTIONS_FILE)
+    return pd.read_csv(
+        QUESTIONS_FILE
+    )
 
 
 # ============================================================
@@ -102,11 +104,15 @@ def read_sheet():
         for i in valid_indexes:
 
             if i < len(row):
-                clean_row.append(row[i])
+                clean_row.append(
+                    row[i]
+                )
             else:
                 clean_row.append("")
 
-        data.append(clean_row)
+        data.append(
+            clean_row
+        )
 
     return clean_headers, data
 
@@ -176,7 +182,9 @@ def email_already_used(email):
     if "Email" not in headers:
         return False
 
-    email_index = headers.index("Email")
+    email_index = headers.index(
+        "Email"
+    )
 
     target_email = (
         email.strip().lower()
@@ -212,7 +220,9 @@ def save_result(
 
     worksheet = connect_to_google_sheet()
 
-    headers = worksheet.row_values(1)
+    headers = worksheet.row_values(
+        1
+    )
 
     headers = [
         str(header).strip()
@@ -245,7 +255,9 @@ def save_result(
 
     all_values = worksheet.get_all_values()
 
-    next_row = len(all_values) + 1
+    next_row = len(
+        all_values
+    ) + 1
 
     new_row = [
         ""
@@ -295,7 +307,9 @@ def save_result(
         "Score"
     )
 
-    if score_index >= len(verification):
+    if score_index >= len(
+        verification
+    ):
 
         raise Exception(
             "The score column could not be verified."
@@ -305,7 +319,9 @@ def save_result(
         verification[score_index]
     ).strip()
 
-    if saved_score != str(int(score)):
+    if saved_score != str(
+        int(score)
+    ):
 
         raise Exception(
             "The score was written but could not "
@@ -360,19 +376,6 @@ for key, value in defaults.items():
     if key not in st.session_state:
 
         st.session_state[key] = value
-
-
-# ============================================================
-# SAFETY CHECK FOR PAGE STATE
-# ============================================================
-
-if st.session_state.page not in [
-    "start",
-    "quiz",
-    "results"
-]:
-
-    st.session_state.page = "start"
 
 
 # ============================================================
@@ -718,7 +721,7 @@ def start_quiz(
     except Exception as e:
 
         st.error(
-            f"Unable to load the question file: {e}"
+            f"Unable to load questions.csv: {e}"
         )
 
         return False
@@ -752,6 +755,10 @@ def start_quiz(
     # PLAYER INFORMATION
     # --------------------------------------------------------
 
+    st.session_state.quiz_questions = (
+        selected_questions
+    )
+
     st.session_state.nickname = (
         nickname.strip()
     )
@@ -762,14 +769,6 @@ def start_quiz(
 
     st.session_state.newsletter = (
         newsletter
-    )
-
-    # --------------------------------------------------------
-    # QUIZ QUESTIONS
-    # --------------------------------------------------------
-
-    st.session_state.quiz_questions = (
-        selected_questions
     )
 
     # --------------------------------------------------------
@@ -823,19 +822,11 @@ def render_start_page():
 
     show_header()
 
-    # ========================================================
-    # INTRODUCTION
-    # ========================================================
-
     st.subheader(
         "As its World Mosquito Day, we would like to test "
         "your knowledge of mosquitoes and mosquito-borne "
         "Infectious Disease"
     )
-
-    # ========================================================
-    # INSTRUCTIONS
-    # ========================================================
 
     st.markdown(
         """
@@ -856,10 +847,6 @@ def render_start_page():
     )
 
     st.divider()
-
-    # ========================================================
-    # PLAYER DETAILS
-    # ========================================================
 
     nickname = st.text_input(
         "Nickname",
@@ -882,10 +869,6 @@ def render_start_page():
         ]
     )
 
-    # ========================================================
-    # MCID WEBPAGE
-    # ========================================================
-
     st.markdown(
         'To find out more about the MCID, please check out our '
         '[webpage](https://mcid.unibe.ch).'
@@ -893,9 +876,9 @@ def render_start_page():
 
     st.write("")
 
-    # ========================================================
+    # --------------------------------------------------------
     # START BUTTON
-    # ========================================================
+    # --------------------------------------------------------
 
     start_clicked = st.button(
         "START QUIZ",
@@ -903,11 +886,11 @@ def render_start_page():
         use_container_width=True
     )
 
-    # ========================================================
-    # TOP 3
-    # ========================================================
-
     st.write("")
+
+    # --------------------------------------------------------
+    # TOP 3
+    # --------------------------------------------------------
 
     st.subheader(
         "🏆 Top 3"
@@ -915,20 +898,29 @@ def render_start_page():
 
     display_top3_leaderboard()
 
-    # ========================================================
-    # START QUIZ
-    # ========================================================
+    # --------------------------------------------------------
+    # START BUTTON ACTION
+    # --------------------------------------------------------
 
     if start_clicked:
 
-        successful = start_quiz(
+        success = start_quiz(
             nickname,
             email,
             newsletter
         )
 
-        if successful:
+        if success:
 
+            # CRITICAL:
+            # page has now changed to "quiz".
+            #
+            # st.rerun() means this entire start page
+            # function stops here and Streamlit starts
+            # a completely new run.
+            #
+            # On the new run, render_quiz_page() is called
+            # instead of this function.
             st.rerun()
 
 
@@ -944,13 +936,9 @@ def render_quiz_page():
         st.session_state.quiz_questions
     )
 
-    question_number = (
-        st.session_state.current_question
-    )
-
-    # ========================================================
+    # --------------------------------------------------------
     # SAFETY CHECK
-    # ========================================================
+    # --------------------------------------------------------
 
     if questions is None:
 
@@ -958,9 +946,15 @@ def render_quiz_page():
 
         st.rerun()
 
-    # ========================================================
+        return
+
+    question_number = (
+        st.session_state.current_question
+    )
+
+    # --------------------------------------------------------
     # CHECK COMPLETE
-    # ========================================================
+    # --------------------------------------------------------
 
     if question_number >= QUIZ_LENGTH:
 
@@ -968,9 +962,11 @@ def render_quiz_page():
 
         st.rerun()
 
-    # ========================================================
+        return
+
+    # --------------------------------------------------------
     # TIMEOUT SCREEN
-    # ========================================================
+    # --------------------------------------------------------
 
     if st.session_state.show_timeout:
 
@@ -1017,13 +1013,19 @@ def render_quiz_page():
 
             st.rerun()
 
-        time.sleep(0.1)
+            return
 
-        st.rerun()
+        else:
 
-    # ========================================================
+            time.sleep(0.1)
+
+            st.rerun()
+
+            return
+
+    # --------------------------------------------------------
     # CURRENT QUESTION
-    # ========================================================
+    # --------------------------------------------------------
 
     question = questions.iloc[
         question_number
@@ -1049,18 +1051,18 @@ def render_quiz_page():
         question.iloc[4]
     )
 
-    # ========================================================
+    # --------------------------------------------------------
     # QUESTION NUMBER
-    # ========================================================
+    # --------------------------------------------------------
 
     st.subheader(
         f"Question {question_number + 1} "
         f"of {QUIZ_LENGTH}"
     )
 
-    # ========================================================
+    # --------------------------------------------------------
     # TIMER
-    # ========================================================
+    # --------------------------------------------------------
 
     elapsed = (
         time.time()
@@ -1077,9 +1079,9 @@ def render_quiz_page():
         f"## ⏱️ {remaining} seconds"
     )
 
-    # ========================================================
+    # --------------------------------------------------------
     # TIMEOUT CHECK
-    # ========================================================
+    # --------------------------------------------------------
 
     if elapsed >= TIME_LIMIT:
 
@@ -1112,9 +1114,11 @@ def render_quiz_page():
 
         st.rerun()
 
-    # ========================================================
+        return
+
+    # --------------------------------------------------------
     # QUESTION
-    # ========================================================
+    # --------------------------------------------------------
 
     st.write("")
 
@@ -1124,9 +1128,9 @@ def render_quiz_page():
 
     st.write("")
 
-    # ========================================================
+    # --------------------------------------------------------
     # SHUFFLE ANSWERS
-    # ========================================================
+    # --------------------------------------------------------
 
     if (
         st.session_state.answers_for_question
@@ -1155,9 +1159,9 @@ def render_quiz_page():
         st.session_state.current_answers
     )
 
-    # ========================================================
+    # --------------------------------------------------------
     # ANSWER BUTTONS
-    # ========================================================
+    # --------------------------------------------------------
 
     for answer in answers:
 
@@ -1167,13 +1171,9 @@ def render_quiz_page():
         ):
 
             is_correct = (
-                str(answer)
-                .strip()
-                .lower()
+                str(answer).strip().lower()
                 ==
-                str(correct_answer)
-                .strip()
-                .lower()
+                str(correct_answer).strip().lower()
             )
 
             st.session_state.answers.append({
@@ -1217,9 +1217,11 @@ def render_quiz_page():
 
             st.rerun()
 
-    # ========================================================
+            return
+
+    # --------------------------------------------------------
     # TIMER REFRESH
-    # ========================================================
+    # --------------------------------------------------------
 
     time.sleep(1)
 
@@ -1234,9 +1236,9 @@ def render_results_page():
 
     show_header()
 
-    # ========================================================
-    # CALCULATE SCORE
-    # ========================================================
+    # --------------------------------------------------------
+    # SCORE
+    # --------------------------------------------------------
 
     score = calculate_score()
 
@@ -1246,9 +1248,9 @@ def render_results_page():
         st.session_state.final_time
     )
 
-    # ========================================================
+    # --------------------------------------------------------
     # RESULTS
-    # ========================================================
+    # --------------------------------------------------------
 
     st.subheader(
         "🎉 Quiz complete!"
@@ -1263,9 +1265,9 @@ def render_results_page():
         f"**{final_time:.2f} seconds**."
     )
 
-    # ========================================================
+    # --------------------------------------------------------
     # YOUR ANSWERS
-    # ========================================================
+    # --------------------------------------------------------
 
     st.divider()
 
@@ -1310,9 +1312,9 @@ def render_results_page():
             use_container_width=True
         )
 
-    # ========================================================
+    # --------------------------------------------------------
     # SAVE SCORE
-    # ========================================================
+    # --------------------------------------------------------
 
     if not st.session_state.result_saved:
 
@@ -1346,9 +1348,9 @@ def render_results_page():
             "Mosquito Day leaderboard!"
         )
 
-    # ========================================================
-    # LEADERBOARD
-    # ========================================================
+    # --------------------------------------------------------
+    # FULL LEADERBOARD
+    # --------------------------------------------------------
 
     st.divider()
 
@@ -1358,9 +1360,9 @@ def render_results_page():
 
     display_leaderboard()
 
-    # ========================================================
+    # --------------------------------------------------------
     # THANK YOU
-    # ========================================================
+    # --------------------------------------------------------
 
     st.write("")
 
@@ -1371,7 +1373,22 @@ def render_results_page():
 
 # ============================================================
 # ============================================================
-# RENDER EXACTLY ONE PAGE
+# MAIN PAGE ROUTER
+# ============================================================
+#
+# THIS IS THE IMPORTANT CHANGE.
+#
+# There is NO page_container and NO st.empty().
+#
+# Streamlit executes exactly ONE of these three functions
+# on every run:
+#
+#     start  -> render_start_page()
+#     quiz   -> render_quiz_page()
+#     results -> render_results_page()
+#
+# Therefore the start-page leaderboard and START QUIZ
+# button cannot be rendered on the quiz page.
 # ============================================================
 # ============================================================
 
@@ -1379,18 +1396,18 @@ if st.session_state.page == "start":
 
     render_start_page()
 
-    st.stop()
-
-
 elif st.session_state.page == "quiz":
 
     render_quiz_page()
-
-    st.stop()
-
 
 elif st.session_state.page == "results":
 
     render_results_page()
 
-    st.stop()
+else:
+
+    # Safety fallback
+
+    st.session_state.page = "start"
+
+    st.rerun()
