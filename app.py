@@ -1,3 +1,6 @@
+op3_welcome.py
+
+
 import streamlit as st
 import pandas as pd
 import time
@@ -538,6 +541,85 @@ def display_leaderboard():
 
 
 # ============================================================
+# DISPLAY TOP 3 LEADERBOARD
+# ============================================================
+
+def display_top3_leaderboard():
+
+    try:
+        leaderboard = get_leaderboard()
+
+    except Exception as e:
+        st.error(
+            "Unable to load the Mosquito Week Leaderboard: "
+            f"{e}"
+        )
+        return
+
+    if leaderboard.empty:
+        st.write("No scores yet. Be the first to play!")
+        return
+
+    leaderboard["Score"] = pd.to_numeric(
+        leaderboard["Score"],
+        errors="coerce"
+    )
+
+    leaderboard["Total Time"] = pd.to_numeric(
+        leaderboard["Total Time"],
+        errors="coerce"
+    )
+
+    leaderboard = leaderboard.dropna(
+        subset=["Score"]
+    )
+
+    if leaderboard.empty:
+        st.write("No scores yet. Be the first to play!")
+        return
+
+    leaderboard = leaderboard.sort_values(
+        by=[
+            "Score",
+            "Total Time"
+        ],
+        ascending=[
+            False,
+            True
+        ]
+    ).reset_index(drop=True)
+
+    leaderboard.insert(
+        0,
+        "Rank",
+        range(1, len(leaderboard) + 1)
+    )
+
+    top3 = leaderboard.head(3).copy()
+
+    public_board = top3[
+        [
+            "Rank",
+            "Nickname",
+            "Score",
+            "Total Time"
+        ]
+    ].copy()
+
+    public_board = public_board.rename(
+        columns={
+            "Total Time": "Time (sec)"
+        }
+    )
+
+    st.dataframe(
+        public_board,
+        hide_index=True,
+        use_container_width=True
+    )
+
+
+# ============================================================
 # CALCULATE SCORE
 # ============================================================
 
@@ -635,6 +717,16 @@ if st.session_state.page == "start":
             "No"
         ]
     )
+
+    st.write("")
+
+    # ========================================================
+    # TOP 3 LEADERBOARD
+    # ========================================================
+
+    st.subheader("🏆 Top 3")
+
+    display_top3_leaderboard()
 
     st.write("")
 
