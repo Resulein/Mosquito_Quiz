@@ -582,8 +582,8 @@ if st.session_state.page == "start":
     # ========================================================
 
     st.subheader(
-        "As its World Mosquito Week, we would like to test "
-        "your knowledge on mosquitoes and mosquito-borne "
+        "As its World Mosquito Day, we would like to test "
+        "your knowledge of mosquitoes and mosquito-borne "
         "Infectious Disease"
     )
 
