@@ -149,7 +149,6 @@ def get_leaderboard():
     for column in required_columns:
 
         if column not in leaderboard.columns:
-
             leaderboard[column] = ""
 
     leaderboard["Score"] = pd.to_numeric(
@@ -198,7 +197,6 @@ def email_already_used(email):
             )
 
             if existing_email == target_email:
-
                 return True
 
     return False
@@ -218,9 +216,7 @@ def save_result(
 
     worksheet = connect_to_google_sheet()
 
-    headers = worksheet.row_values(
-        1
-    )
+    headers = worksheet.row_values(1)
 
     headers = [
         str(header).strip()
@@ -253,9 +249,7 @@ def save_result(
 
     all_values = worksheet.get_all_values()
 
-    next_row = len(
-        all_values
-    ) + 1
+    next_row = len(all_values) + 1
 
     new_row = [
         ""
@@ -365,16 +359,7 @@ defaults = {
 
     "timeout_started": None,
 
-    "timeout_recorded_for": None,
-
-    # Start-page widgets
-    "start_nickname": "",
-
-    "start_email": "",
-
-    "start_newsletter": "Please select",
-
-    "start_error": ""
+    "timeout_recorded_for": None
 }
 
 
@@ -417,104 +402,7 @@ def show_header():
 
 
 # ============================================================
-# TOP 3 LEADERBOARD
-# ============================================================
-
-def display_top3_leaderboard():
-
-    try:
-
-        leaderboard = get_leaderboard()
-
-    except Exception as e:
-
-        st.error(
-            "Unable to load the Mosquito Week Leaderboard: "
-            f"{e}"
-        )
-
-        return
-
-    if leaderboard.empty:
-
-        st.write(
-            "No scores yet. Be the first to play!"
-        )
-
-        return
-
-    leaderboard["Score"] = pd.to_numeric(
-        leaderboard["Score"],
-        errors="coerce"
-    )
-
-    leaderboard["Total Time"] = pd.to_numeric(
-        leaderboard["Total Time"],
-        errors="coerce"
-    )
-
-    leaderboard = leaderboard.dropna(
-        subset=["Score"]
-    )
-
-    if leaderboard.empty:
-
-        st.write(
-            "No scores yet. Be the first to play!"
-        )
-
-        return
-
-    leaderboard = leaderboard.sort_values(
-        by=[
-            "Score",
-            "Total Time"
-        ],
-        ascending=[
-            False,
-            True
-        ]
-    ).reset_index(
-        drop=True
-    )
-
-    leaderboard.insert(
-        0,
-        "Rank",
-        range(
-            1,
-            len(leaderboard) + 1
-        )
-    )
-
-    top3 = leaderboard.head(
-        3
-    ).copy()
-
-    public_board = top3[
-        [
-            "Rank",
-            "Nickname",
-            "Score",
-            "Total Time"
-        ]
-    ].copy()
-
-    public_board = public_board.rename(
-        columns={
-            "Total Time": "Time (sec)"
-        }
-    )
-
-    st.dataframe(
-        public_board,
-        hide_index=True,
-        use_container_width=True
-    )
-
-
-# ============================================================
-# FULL LEADERBOARD
+# DISPLAY FULL LEADERBOARD
 # ============================================================
 
 def display_leaderboard():
@@ -607,6 +495,101 @@ def display_leaderboard():
 
 
 # ============================================================
+# DISPLAY TOP 3
+# ============================================================
+
+def display_top3_leaderboard():
+
+    try:
+
+        leaderboard = get_leaderboard()
+
+    except Exception as e:
+
+        st.error(
+            "Unable to load the Mosquito Week Leaderboard: "
+            f"{e}"
+        )
+
+        return
+
+    if leaderboard.empty:
+
+        st.write(
+            "No scores yet. Be the first to play!"
+        )
+
+        return
+
+    leaderboard["Score"] = pd.to_numeric(
+        leaderboard["Score"],
+        errors="coerce"
+    )
+
+    leaderboard["Total Time"] = pd.to_numeric(
+        leaderboard["Total Time"],
+        errors="coerce"
+    )
+
+    leaderboard = leaderboard.dropna(
+        subset=["Score"]
+    )
+
+    if leaderboard.empty:
+
+        st.write(
+            "No scores yet. Be the first to play!"
+        )
+
+        return
+
+    leaderboard = leaderboard.sort_values(
+        by=[
+            "Score",
+            "Total Time"
+        ],
+        ascending=[
+            False,
+            True
+        ]
+    ).reset_index(
+        drop=True
+    )
+
+    leaderboard.insert(
+        0,
+        "Rank",
+        range(
+            1,
+            len(leaderboard) + 1
+        )
+    )
+
+    top3 = leaderboard.head(3).copy()
+
+    public_board = top3[
+        [
+            "Rank",
+            "Nickname",
+            "Score",
+            "Total Time"
+        ]
+    ].copy()
+
+    public_board = public_board.rename(
+        columns={
+            "Total Time": "Time (sec)"
+        }
+    )
+
+    st.dataframe(
+        public_board,
+        hide_index=True,
+        use_container_width=True
+    )
+
+
+# ============================================================
 # CALCULATE SCORE
 # ============================================================
 
@@ -639,207 +622,10 @@ def finish_quiz():
 
 
 # ============================================================
-# START QUIZ CALLBACK
-#
-# IMPORTANT:
-# This callback changes the page state BEFORE Streamlit
-# performs the next full script run.
-#
-# Therefore the start page is NOT rendered during the
-# quiz-page run.
-# ============================================================
-
-def start_quiz():
-
-    nickname = st.session_state.start_nickname
-    email = st.session_state.start_email
-    newsletter = st.session_state.start_newsletter
-
-    # --------------------------------------------------------
-    # VALIDATE NICKNAME
-    # --------------------------------------------------------
-
-    if not nickname.strip():
-
-        st.session_state.start_error = (
-            "Please enter a nickname."
-        )
-
-        return
-
-    # --------------------------------------------------------
-    # VALIDATE EMAIL
-    # --------------------------------------------------------
-
-    if not email.strip():
-
-        st.session_state.start_error = (
-            "Please enter your email address."
-        )
-
-        return
-
-    if "@" not in email or "." not in email:
-
-        st.session_state.start_error = (
-            "Please enter a valid email address."
-        )
-
-        return
-
-    # --------------------------------------------------------
-    # VALIDATE NEWSLETTER
-    # --------------------------------------------------------
-
-    if newsletter == "Please select":
-
-        st.session_state.start_error = (
-            "Please select whether you would like "
-            "to receive the MCID's newsletter."
-        )
-
-        return
-
-    # --------------------------------------------------------
-    # CHECK EMAIL
-    # --------------------------------------------------------
-
-    try:
-
-        if email_already_used(email):
-
-            st.session_state.start_error = (
-                "This email address has already been used "
-                "to play the quiz. Each player can only "
-                "play once."
-            )
-
-            return
-
-    except Exception as e:
-
-        st.session_state.start_error = (
-            "Unable to check the Mosquito Week "
-            f"Leaderboard: {e}"
-        )
-
-        return
-
-    # --------------------------------------------------------
-    # LOAD QUESTIONS
-    # --------------------------------------------------------
-
-    try:
-
-        questions = load_questions()
-
-        questions = questions.dropna(
-            how="all"
-        )
-
-    except Exception as e:
-
-        st.session_state.start_error = (
-            f"Unable to load the question file: {e}"
-        )
-
-        return
-
-    # --------------------------------------------------------
-    # CHECK QUESTION COUNT
-    # --------------------------------------------------------
-
-    if len(questions) < QUIZ_LENGTH:
-
-        st.session_state.start_error = (
-            f"The question bank contains only "
-            f"{len(questions)} questions. "
-            f"You need at least {QUIZ_LENGTH} questions."
-        )
-
-        return
-
-    # --------------------------------------------------------
-    # SELECT QUESTIONS
-    # --------------------------------------------------------
-
-    selected_questions = questions.sample(
-        n=QUIZ_LENGTH,
-        replace=False
-    ).reset_index(
-        drop=True
-    )
-
-    st.session_state.quiz_questions = (
-        selected_questions
-    )
-
-    # --------------------------------------------------------
-    # PLAYER INFORMATION
-    # --------------------------------------------------------
-
-    st.session_state.nickname = (
-        nickname.strip()
-    )
-
-    st.session_state.email = (
-        email.strip()
-    )
-
-    st.session_state.newsletter = (
-        newsletter
-    )
-
-    # --------------------------------------------------------
-    # RESET QUIZ
-    # --------------------------------------------------------
-
-    st.session_state.current_question = 0
-
-    st.session_state.answers = []
-
-    st.session_state.score = 0
-
-    st.session_state.final_time = 0
-
-    st.session_state.result_saved = False
-
-    st.session_state.current_answers = None
-
-    st.session_state.answers_for_question = None
-
-    st.session_state.show_timeout = False
-
-    st.session_state.timeout_started = None
-
-    st.session_state.timeout_recorded_for = None
-
-    st.session_state.start_error = ""
-
-    # --------------------------------------------------------
-    # START TIMERS
-    # --------------------------------------------------------
-
-    now = time.time()
-
-    st.session_state.quiz_start_time = now
-
-    st.session_state.question_start_time = now
-
-    # --------------------------------------------------------
-    # CRITICAL:
-    #
-    # Change the page BEFORE the next Streamlit run.
-    # --------------------------------------------------------
-
-    st.session_state.page = "quiz"
-
-
-# ============================================================
 # START PAGE
 # ============================================================
 
-def render_start_page():
+if st.session_state.page == "start":
 
     show_header()
 
@@ -848,9 +634,9 @@ def render_start_page():
     # ========================================================
 
     st.subheader(
-        "As its World Mosquito Day, we would like to test "
+        "As it is World Mosquito Day, we would like to test "
         "your knowledge of mosquitoes and mosquito-borne "
-        "Infectious Disease"
+        "infectious diseases."
     )
 
     # ========================================================
@@ -881,26 +667,41 @@ def render_start_page():
     # PLAYER DETAILS
     # ========================================================
 
-    st.text_input(
+    nickname = st.text_input(
         "Nickname",
-        placeholder="Enter your nickname",
-        key="start_nickname"
+        value=st.session_state.nickname,
+        placeholder="Enter your nickname"
     )
 
-    st.text_input(
+    email = st.text_input(
         "Email address",
-        placeholder="Enter your email address",
-        key="start_email"
+        value=st.session_state.email,
+        placeholder="Enter your email address"
     )
 
-    st.selectbox(
+    newsletter = st.selectbox(
         'Would you like to receive the MCID\'s newsletter "the SPREAD"?',
         [
             "Please select",
             "Yes",
             "No"
         ],
-        key="start_newsletter"
+        index=(
+            [
+                "Please select",
+                "Yes",
+                "No"
+            ].index(
+                st.session_state.newsletter
+            )
+            if st.session_state.newsletter
+            in [
+                "Please select",
+                "Yes",
+                "No"
+            ]
+            else 0
+        )
     )
 
     # ========================================================
@@ -915,35 +716,20 @@ def render_start_page():
     st.write("")
 
     # ========================================================
-    # ERROR MESSAGE
-    # ========================================================
-
-    if st.session_state.start_error:
-
-        st.error(
-            st.session_state.start_error
-        )
-
-    # ========================================================
     # START BUTTON
     # ========================================================
 
-    st.button(
+    start_clicked = st.button(
         "START QUIZ",
         type="primary",
-        use_container_width=True,
-        key="start_quiz_button",
-        on_click=start_quiz
+        use_container_width=True
     )
-
-    st.write("")
 
     # ========================================================
     # TOP 3 LEADERBOARD
-    #
-    # This is ONLY rendered inside render_start_page().
-    # It can therefore never appear on the quiz page.
     # ========================================================
+
+    st.write("")
 
     st.subheader(
         "🏆 Top 3"
@@ -951,17 +737,214 @@ def render_start_page():
 
     display_top3_leaderboard()
 
+    # ========================================================
+    # START QUIZ
+    # ========================================================
+
+    if start_clicked:
+
+        # ----------------------------------------------------
+        # VALIDATE NICKNAME
+        # ----------------------------------------------------
+
+        if not nickname.strip():
+
+            st.error(
+                "Please enter a nickname."
+            )
+
+            st.stop()
+
+        # ----------------------------------------------------
+        # VALIDATE EMAIL
+        # ----------------------------------------------------
+
+        if not email.strip():
+
+            st.error(
+                "Please enter your email address."
+            )
+
+            st.stop()
+
+        if "@" not in email or "." not in email:
+
+            st.error(
+                "Please enter a valid email address."
+            )
+
+            st.stop()
+
+        # ----------------------------------------------------
+        # VALIDATE NEWSLETTER
+        # ----------------------------------------------------
+
+        if newsletter == "Please select":
+
+            st.error(
+                "Please select whether you would like "
+                "to receive the MCID's newsletter."
+            )
+
+            st.stop()
+
+        # ----------------------------------------------------
+        # CHECK EMAIL
+        # ----------------------------------------------------
+
+        try:
+
+            if email_already_used(email):
+
+                st.error(
+                    "This email address has already been used "
+                    "to play the quiz. Each player can only play once."
+                )
+
+                st.stop()
+
+        except Exception as e:
+
+            st.error(
+                "Unable to check the Mosquito Week "
+                f"Leaderboard: {e}"
+            )
+
+            st.stop()
+
+        # ----------------------------------------------------
+        # LOAD QUESTIONS
+        # ----------------------------------------------------
+
+        try:
+
+            questions = load_questions()
+
+        except Exception as e:
+
+            st.error(
+                f"Unable to load the question file: {e}"
+            )
+
+            st.stop()
+
+        questions = questions.dropna(
+            how="all"
+        )
+
+        if len(questions) < QUIZ_LENGTH:
+
+            st.error(
+                f"The question bank contains only "
+                f"{len(questions)} questions. "
+                f"You need at least {QUIZ_LENGTH} questions."
+            )
+
+            st.stop()
+
+        # ----------------------------------------------------
+        # SELECT QUESTIONS
+        # ----------------------------------------------------
+
+        selected_questions = questions.sample(
+            n=QUIZ_LENGTH,
+            replace=False
+        ).reset_index(
+            drop=True
+        )
+
+        # ----------------------------------------------------
+        # PLAYER INFORMATION
+        # ----------------------------------------------------
+
+        st.session_state.nickname = (
+            nickname.strip()
+        )
+
+        st.session_state.email = (
+            email.strip()
+        )
+
+        st.session_state.newsletter = (
+            newsletter
+        )
+
+        # ----------------------------------------------------
+        # QUIZ QUESTIONS
+        # ----------------------------------------------------
+
+        st.session_state.quiz_questions = (
+            selected_questions
+        )
+
+        # ----------------------------------------------------
+        # RESET QUIZ STATE
+        # ----------------------------------------------------
+
+        st.session_state.current_question = 0
+
+        st.session_state.answers = []
+
+        st.session_state.score = 0
+
+        st.session_state.final_time = 0
+
+        st.session_state.result_saved = False
+
+        st.session_state.current_answers = None
+
+        st.session_state.answers_for_question = None
+
+        st.session_state.show_timeout = False
+
+        st.session_state.timeout_started = None
+
+        st.session_state.timeout_recorded_for = None
+
+        # ----------------------------------------------------
+        # START TIMERS
+        # ----------------------------------------------------
+
+        now = time.time()
+
+        st.session_state.quiz_start_time = now
+
+        st.session_state.question_start_time = now
+
+        # ----------------------------------------------------
+        # CHANGE PAGE
+        # ----------------------------------------------------
+
+        st.session_state.page = "quiz"
+
+        # ----------------------------------------------------
+        # IMMEDIATELY RERUN
+        #
+        # IMPORTANT:
+        # There is NO page_container.empty() here.
+        #
+        # The next Streamlit run enters the "quiz" branch
+        # and therefore does NOT execute any of the start-page
+        # code above.
+        # ----------------------------------------------------
+
+        st.rerun()
+
 
 # ============================================================
 # QUIZ PAGE
 # ============================================================
 
-def render_quiz_page():
+elif st.session_state.page == "quiz":
 
     show_header()
 
     questions = (
         st.session_state.quiz_questions
+    )
+
+    question_number = (
+        st.session_state.current_question
     )
 
     # ========================================================
@@ -973,10 +956,6 @@ def render_quiz_page():
         st.session_state.page = "start"
 
         st.rerun()
-
-    question_number = (
-        st.session_state.current_question
-    )
 
     # ========================================================
     # CHECK COMPLETE
@@ -1181,14 +1160,11 @@ def render_quiz_page():
     # ANSWER BUTTONS
     # ========================================================
 
-    for answer_number, answer in enumerate(
-        answers
-    ):
+    for answer in answers:
 
         if st.button(
             answer,
-            use_container_width=True,
-            key=f"answer_{question_number}_{answer_number}"
+            use_container_width=True
         ):
 
             is_correct = (
@@ -1255,7 +1231,7 @@ def render_quiz_page():
 # RESULTS PAGE
 # ============================================================
 
-def render_results_page():
+elif st.session_state.page == "results":
 
     show_header()
 
@@ -1372,7 +1348,7 @@ def render_results_page():
         )
 
     # ========================================================
-    # FULL LEADERBOARD
+    # MOSQUITO DAY LEADERBOARD
     # ========================================================
 
     st.divider()
@@ -1392,41 +1368,3 @@ def render_results_page():
     st.info(
         "Thanks for taking part in the MCID Mosquito Quiz!"
     )
-
-
-# ============================================================
-# MAIN APP ROUTER
-#
-# THIS IS THE KEY PART.
-#
-# Only ONE of these functions is called on each run.
-#
-# Start page:
-#     render_start_page()
-#
-# Quiz page:
-#     render_quiz_page()
-#
-# Results page:
-#     render_results_page()
-#
-# There is no st.empty() container and no page clearing.
-# ============================================================
-
-if st.session_state.page == "start":
-
-    render_start_page()
-
-elif st.session_state.page == "quiz":
-
-    render_quiz_page()
-
-elif st.session_state.page == "results":
-
-    render_results_page()
-
-else:
-
-    st.session_state.page = "start"
-
-    st.rerun()
