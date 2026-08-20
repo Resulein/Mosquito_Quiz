@@ -705,6 +705,17 @@ if st.session_state.page == "start":
         st.write("")
 
         # ====================================================
+        # START BUTTON
+        # ====================================================
+
+        start_clicked = st.button(
+            "START QUIZ",
+            type="primary",
+            use_container_width=True
+        )
+        st.write("")
+        
+        # ====================================================
         # TOP 3 LEADERBOARD
         # ====================================================
 
@@ -714,16 +725,7 @@ if st.session_state.page == "start":
 
         display_top3_leaderboard()
 
-        st.write("")
-
-        # ====================================================
-        # START BUTTON
-        # ====================================================
-
-        start_clicked = st.button(
-            "START QUIZ",
-            type="primary",
-            use_container_width=True
+        
         )
 
         # ====================================================
